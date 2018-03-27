@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Stack;
 
 import demeter.gabor.tracker.R;
 import demeter.gabor.tracker.models.MyLocation;
@@ -86,19 +87,13 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             viewHolder.tvLangitude.setText("Nem ismert");
             viewHolder.tvAddress.setText("Nem ismert");
         }else{
-            Geocoder gc = new Geocoder(context, Locale.getDefault());
-            List<Address> addresses = null;
 
-            try {
-                addresses = gc.getFromLocation(tempUser.getLastLocation().getLatitude(),tempUser.getLastLocation().getLongitude(), 10);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
 
             viewHolder.tvLongitude.setText(String.valueOf(tempUser.getLastLocation().getLongitude()));
             viewHolder.tvLangitude.setText(String.valueOf(tempUser.getLastLocation().getLatitude()));
-           // String apperingText = addresses.get(0).getCountryName()+ " " +addresses.get(0).getPostalCode()+ " " + addresses.get(0).getAddressLine(0);
-            viewHolder.tvAddress.setText("TODO");
+
+
+            viewHolder.tvAddress.setText(getAddressFromMyLocation(tempUser));
 
         }
 
@@ -114,6 +109,29 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 */
     }
 
+    private String getAddressFromMyLocation(User tempUser) {
+        String strAdd = "";
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(tempUser.getLastLocation().getLatitude(), tempUser.getLastLocation().getLongitude(), 1);
+            if (addresses != null) {
+                Address returnedAddress = addresses.get(0);
+                StringBuilder sb = new StringBuilder("");
+                for (int i = 0; i <= returnedAddress.getMaxAddressLineIndex(); i++) {
+                    sb.append(returnedAddress.getAddressLine(i)).append("\n");
+                }
+                strAdd = sb.toString();
+                Log.w("Current loction address", sb.toString());
+            } else {
+                Log.w("Current loction address", "No Address returned!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("UserAdapter", String.valueOf(e.getStackTrace()));
+        }
+        return strAdd;
+    }
+
     @Override
     public int getItemCount() {
         return userList.size();
@@ -124,9 +142,11 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         userMap.put(key,user);
         notifyDataSetChanged();
     }
-    public void updateLastLocation(MyLocation loc) {
-        Log.d("updateLocationUI",loc.toString());
-       // userMap.get(setLastLocations(loc);
+    public void updateLastLocation(Map<String, Stack<MyLocation>> locationMap) {
+        for(String uid :locationMap.keySet()){
+            userMap.get(uid).setStackLocation(locationMap.get(uid));
+        }
+
         notifyDataSetChanged();
     }
 

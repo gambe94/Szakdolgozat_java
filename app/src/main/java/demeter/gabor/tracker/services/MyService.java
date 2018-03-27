@@ -57,7 +57,8 @@ public class MyService extends Service {
 
                 if(currentUser != null){
                     Log.d("MYservice",currentUser.getDisplayName());
-                    locationsReference.child(currentUser.getUid()).push().setValue(new MyLocation(location));
+                    writeLocatointoFirebase(location);
+
                 }
             }
 
@@ -82,7 +83,7 @@ public class MyService extends Service {
         locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
 
         //noinspection MissingPermission
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,3000,0,listener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,3000,200,listener);
 
     }
 
@@ -96,4 +97,9 @@ public class MyService extends Service {
             locationManager.removeUpdates(listener);
         }
     }
+
+    private void writeLocatointoFirebase(Location location) {
+        locationsReference.child(currentUser.getUid()).push().setValue(new MyLocation(location));
+    }
+
 }

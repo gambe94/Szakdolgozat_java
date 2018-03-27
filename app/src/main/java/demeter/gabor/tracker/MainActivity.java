@@ -25,7 +25,14 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 import demeter.gabor.tracker.adapters.UserAdapter;
 import demeter.gabor.tracker.models.MyLocation;
@@ -67,7 +74,7 @@ public class MainActivity extends BaseActivity {
 
         //INIT DATABASES CHANGES LISTENER
         initUsersListener();
-       // initUserLocationListener(); //TODO: nem jo a listenre meg
+        initUserLocationListener(); //TODO: nem jo a listenre meg
 
         //CHECK PERMISSONS
         if (!runtime_permissions())
@@ -87,7 +94,7 @@ public class MainActivity extends BaseActivity {
                     Double latitude = intent.getExtras().getDouble("latitude");
                     Double longitude = intent.getExtras().getDouble("longitude");
 
-                    usersAdapter.updateLastLocation(new MyLocation(latitude,longitude));
+                    //usersAdapter.updateLastLocation(new MyLocation(latitude,longitude));
                 }
             };
         }
@@ -198,27 +205,39 @@ public class MainActivity extends BaseActivity {
             }
         });
     }
-
+    // usersAdapter.updateLastLocation(dataSnapshot.getValue(MyLocation.class));
     private void initUserLocationListener() {
-        userLocationReference.addChildEventListener(new ChildEventListener() {
+        userLocationReference.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                usersAdapter.updateLastLocation(dataSnapshot.getValue(MyLocation.class));
-            }
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Map<String, Stack<MyLocation>> currentLocationByUser = new HashMap<>();
+//                Log.d("evntListener datasn: ", dataSnapshot.toString());
+//                Log.d("evntListener snkey: ", dataSnapshot.getKey());
+//                Log.d("evntListener sndatava ", dataSnapshot.getValue().toString());
 
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                List<MyLocation> list = new ArrayList<>();
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    String uId = (String) ds.getKey();
 
-            }
+                    if(!currentLocationByUser.containsKey(uId)){
+                        currentLocationByUser.put(uId, new Stack<MyLocation>());
+                    }
 
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
+//                    Log.d("evntListener ds: ", ds.toString());
+//                    Log.d("evntListener uid: ", ds.getKey());
+//                    Log.d("evntListener dschield:", ds.child(uId).toString()); //off value= null
+//                    Log.d("evntListener dsValue:", ds.getValue().toString()); //ez jó visszaadja az adott listát
+                    for (DataSnapshot dschield : ds.getChildren()) {
+//                        Log.d("evntListener dschield:", dschield.toString());
+//                        Log.d("evntListener dschield2:", dschield.getValue().toString());
+                        MyLocation loc =dschield.getValue(MyLocation.class);
 
-            }
+                        currentLocationByUser.get(uId).push(loc);
 
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
 
+                    }
+                }
+                usersAdapter.updateLastLocation(currentLocationByUser);
             }
 
             @Override
@@ -229,7 +248,6 @@ public class MainActivity extends BaseActivity {
 
 
     }
-
 
 
 

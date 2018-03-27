@@ -6,6 +6,7 @@ import android.location.Location;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.util.Map;
 import java.util.Stack;
 
 // [START blog_user_class]
@@ -70,5 +71,9 @@ public class User {
 
     public void setLastLocations(MyLocation loc) {
         this.locations.push(loc);
+    }
+
+    public void setStackLocation(Stack<MyLocation> stackLocation) {
+        this.locations = stackLocation;
     }
 }
