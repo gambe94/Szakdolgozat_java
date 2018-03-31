@@ -6,8 +6,11 @@ public final class Constants {
     public static final String LOCATION_UPDATE = "location_update";
     public static final String LONGITUDE = "longitude";
     public static final String LATITUDE = "latitude";
+    public static final String CURRENTUSER_UID = "userUId";
+    public static final String USERNAME = "username";
 
     //For FireBase DataBaseű
     public static final String USERS_REF = "users";
     public static final String LOCATIONS_REF = "locations";
+    public static final String LAST_KNOWN_LOCATIONS_REF = "last_known_location";
 }

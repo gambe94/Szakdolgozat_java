@@ -10,15 +10,16 @@ public class MyLocation{
 
     private Double longitude;
     private Double latitude;
-    //private Timestamp timestamp;
+    private String userId;
 
     public MyLocation() {
 
     }
 
-    public MyLocation(Location loc) {
+    public MyLocation(Location loc, String userId) {
         this.latitude =loc.getLatitude();
         this.longitude = loc.getLongitude();
+        this.userId =userId;
        // this.timestamp = timestamp;
 
 
@@ -31,6 +32,13 @@ public class MyLocation{
 
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
 
     public Double getLongitude() {
         return longitude;

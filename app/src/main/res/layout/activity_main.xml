@@ -30,5 +30,11 @@
         android:layout_height="wrap_content"
         android:text="stop" />
 
+    <TextView
+        android:id="@+id/loginAs"
+        android:layout_width="match_parent"
+        android:layout_height="41dp"
+        android:text="TextView" />
+
 
 </LinearLayout>

@@ -16,13 +16,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -47,16 +50,23 @@ public class MainActivity extends BaseActivity {
     private Button startBtn, stopBtn;
     private RecyclerView recyclerViewUsers;
     private UserAdapter usersAdapter;
+    private TextView tvLoginAs;
+
     private DatabaseReference mUsersDatabase;
     private DatabaseReference mLocationReference;
+    private DatabaseReference mLastKnownLocation;
 
+    private Query mLastLocationQuery;
+
+    private ValueEventListener locationLisener;
+    private ChildEventListener userListener;
+    private ValueEventListener loadLastknownLocation;
 
 
 
 
     private BroadcastReceiver broadcastReceiver;
-    private ValueEventListener locationLisener;
-    private ChildEventListener userListener;
+    private boolean isSaveLastData;
 
 
     @Override
@@ -67,12 +77,17 @@ public class MainActivity extends BaseActivity {
         //DATABASES REFERENCE
         mUsersDatabase = FirebaseDatabase.getInstance().getReference(Constants.USERS_REF);
         mLocationReference = FirebaseDatabase.getInstance().getReference(Constants.LOCATIONS_REF);
+        mLastKnownLocation = FirebaseDatabase.getInstance().getReference(Constants.LAST_KNOWN_LOCATIONS_REF);
+
+        mLastLocationQuery = mLocationReference.orderByKey().limitToLast(1);
 
         //Create Listeners
         createLocationListerner();
         createUserListerner();
 
         //SET VIEWS
+        tvLoginAs = (TextView) findViewById(R.id.loginAs);
+
         usersAdapter = new UserAdapter(getApplicationContext());
         recyclerViewUsers = (RecyclerView) findViewById(
                 R.id.recyclerViewUsers);
@@ -90,13 +105,22 @@ public class MainActivity extends BaseActivity {
 
         //INIT DATABASES CHANGES LISTENER
         mUsersDatabase.addChildEventListener(userListener);
-        mLocationReference.addValueEventListener(locationLisener);
+        mLastLocationQuery.addValueEventListener(locationLisener);
 
+        //INIT FIREBASE EVENT LISTENERS When actevity is loaded
+        mLastKnownLocation.addListenerForSingleValueEvent(loadLastknownLocation);
+
+
+        //INIT variables
+
+        tvLoginAs.setText(FirebaseAuth.getInstance().getCurrentUser().getEmail());
         //CHECK PERMISSONS
         if (!runtime_permissions())
             enable_buttons();
 
     }
+
+
 
     private void createUserListerner() {
         userListener = new ChildEventListener() {
@@ -104,6 +128,7 @@ public class MainActivity extends BaseActivity {
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 Log.d(TAG,"AUTHTLISTENER_Added:"+ dataSnapshot.toString());
                 User newUser = dataSnapshot.getValue(User.class);
+                Log.d(TAG,"AUTHTLISTENER_Added:"+ newUser);
                 usersAdapter.addUser(newUser, dataSnapshot.getKey());
 
             }
@@ -135,27 +160,15 @@ public class MainActivity extends BaseActivity {
         locationLisener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Map<String, Stack<MyLocation>> currentLocationByUser = new HashMap<>();
 
-
-                List<MyLocation> list = new ArrayList<>();
-                for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    String uId = (String) ds.getKey();
-
-                    if(!currentLocationByUser.containsKey(uId) && !uId.equals(getUid())  ){
-                        currentLocationByUser.put(uId, new Stack<MyLocation>());
-                    }
-
-
-                    for (DataSnapshot dschield : ds.getChildren()) {
-                        MyLocation loc =dschield.getValue(MyLocation.class);
-                        if(!uId.equals(getUid())) {
-                            currentLocationByUser.get(uId).push(loc);
-                        }
-                    }
+                MyLocation loc;
+                for(DataSnapshot data : dataSnapshot.getChildren()){
+                    Log.d(TAG, "Location Query"+ dataSnapshot.toString());
+                    loc = data.getValue(MyLocation.class);
+                    usersAdapter.updateLastLocation(loc);
                 }
 
-                usersAdapter.updateLastLocation(currentLocationByUser);
+
             }
 
             @Override
@@ -163,12 +176,50 @@ public class MainActivity extends BaseActivity {
 
             }
         };
+
+        loadLastknownLocation = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.d(TAG, "LastKnownLoc out "+ dataSnapshot.toString());
+
+                List<MyLocation> locations = new ArrayList<>();
+//
+//                Log.d(TAG, "LastKnownLoc: "+ dataSnapshot);
+//                Log.d(TAG, "LastKnownLoc  value: "+ dataSnapshot.getValue(MyLocation.class));
+//                locations.add(dataSnapshot.getValue(MyLocation.class));
+
+                for(DataSnapshot data : dataSnapshot.getChildren()){
+
+                    Log.d(TAG, "LastKnownLoc: "+ data);
+                    Log.d(TAG, "LastKnownLoc  value: "+ data.getValue(MyLocation.class));
+                    locations.add(data.getValue(MyLocation.class));
+                }
+                if(!locations.isEmpty()) {
+                    usersAdapter.updateLastLocation(locations);
+                 }
+
+
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+
+        isSaveLastData = false;
+
         if(broadcastReceiver == null){
             broadcastReceiver = new BroadcastReceiver() {
                 @Override
@@ -177,7 +228,7 @@ public class MainActivity extends BaseActivity {
                     Double latitude = intent.getExtras().getDouble(Constants.LATITUDE);
                     Double longitude = intent.getExtras().getDouble(Constants.LONGITUDE);
 
-                    usersAdapter.updateLastLocation(getUid(), new MyLocation(latitude,longitude));
+                    //usersAdapter.updateLastLocation(getUid(), new MyLocation(latitude,longitude));
                 }
             };
         }
@@ -189,6 +240,8 @@ public class MainActivity extends BaseActivity {
         super.onStop();
         mUsersDatabase.removeEventListener(userListener);
         mLocationReference.removeEventListener(locationLisener);
+        mLastKnownLocation.removeEventListener(loadLastknownLocation);
+        saveLastLocation();
     }
 
     @Override
@@ -209,6 +262,7 @@ public class MainActivity extends BaseActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int i = item.getItemId();
         if (i == R.id.action_logout) {
+            saveLastLocation();
             FirebaseAuth.getInstance().signOut();
             startActivity(new Intent(this, SignInActivity.class));
             finish();
@@ -264,7 +318,14 @@ public class MainActivity extends BaseActivity {
     }
 
 
+    public  void saveLastLocation(){
+        Log.d(TAG, "saveLastLocation: "+ isSaveLastData);
+        if(!isSaveLastData){
+            mLastKnownLocation.child(getUid()).setValue(usersAdapter.getuserbyId(getUid()).getLastLocation());
+            isSaveLastData = true;
+        }
 
+    }
 
 
 

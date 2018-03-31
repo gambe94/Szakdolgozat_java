@@ -23,6 +23,7 @@ import demeter.gabor.tracker.models.MyLocation;
 public class MyService extends Service {
 
 
+
     private LocationListener listener;
     private LocationManager locationManager;
     private FirebaseAuth mAuth;
@@ -51,14 +52,15 @@ public class MyService extends Service {
         listener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                Intent i = new Intent(Constants.LOCATION_UPDATE);
-                i.putExtra(Constants.LONGITUDE,location.getLongitude());
-                i.putExtra(Constants.LATITUDE,location.getLatitude());
-                sendBroadcast(i);
+//                Intent i = new Intent(Constants.LOCATION_UPDATE);
+//                i.putExtra(Constants.LONGITUDE,location.getLongitude());
+//                i.putExtra(Constants.LATITUDE,location.getLatitude());
+//                i.putExtra(Constants.LONGITUDE,location.getLongitude());
+//                sendBroadcast(i);
 
                 if(currentUser != null){
 //                    Log.d("MYservice",currentUser.getDisplayName());
-                    writeLocatointoFirebase(location);
+                    writeLocatoinToFirebase(location);
 
                 }
             }
@@ -99,8 +101,8 @@ public class MyService extends Service {
         }
     }
 
-    private void writeLocatointoFirebase(Location location) {
-        locationsReference.child(currentUser.getUid()).push().setValue(new MyLocation(location));
+    private void writeLocatoinToFirebase(Location location) {
+        locationsReference.push().setValue(new MyLocation(location, currentUser.getUid()));
     }
 
 }

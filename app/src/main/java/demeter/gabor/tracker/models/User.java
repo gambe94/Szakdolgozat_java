@@ -7,6 +7,7 @@ import android.net.Uri;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
@@ -76,12 +77,27 @@ public class User {
         }else{
             this.locations.push(loc);
         }
-
     }
 
-    public void setStackLocation(Stack<MyLocation> stackLocation) {
-        this.locations = stackLocation;
+    public MyLocation getLastLocations() {
+        if(this.locations != null && !this.locations.isEmpty()){
+           return locations.peek();
+        }else{
+            return null;
+        }
     }
+
+    public Map<String, Object> toMap() {
+        HashMap<String, Object> result = new HashMap<>();
+        result.put("username", this.username);
+        result.put("email", this.email);
+        result.put("lastLocation", getLastLocation());
+
+
+        return result;
+    }
+
+
 
 
 }

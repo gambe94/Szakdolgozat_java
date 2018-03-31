@@ -1,7 +1,11 @@
 package demeter.gabor.tracker;
 
-import android.support.v4.app.FragmentActivity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -10,15 +14,21 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
+import demeter.gabor.tracker.Util.Constants;
 import demeter.gabor.tracker.adapters.UserAdapter;
 
 public class UserMapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private Double currentLongitude;
-    private Double currentLatitude;
-    private String username;
+
+
+
+  //  private BroadcastReceiver broadcastReceiver;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,17 +57,47 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        this.currentLongitude = getIntent().getDoubleExtra(UserAdapter.LONGITUDE, 0);
-        this.currentLatitude = getIntent().getDoubleExtra(UserAdapter.LATITUDE, 0);
-        this.username = getIntent().getStringExtra(UserAdapter.USERNAME);
+        Double currentLongitude = getIntent().getDoubleExtra(Constants.LONGITUDE, 0);
+        Double currentLatitude = getIntent().getDoubleExtra(Constants.LATITUDE, 0);
+        String username = getIntent().getStringExtra(Constants.USERNAME);
 
-        Log.d("UserMapActivity", this.currentLongitude.toString());
-        Log.d("UserMapActivity", this.currentLatitude.toString());
-        Log.d("UserMapActivity", this.username.toString());
+        Log.d("UserMapActivity", currentLongitude.toString());
+        Log.d("UserMapActivity", currentLatitude.toString());
+        Log.d("UserMapActivity", username.toString());
 
         // Add a marker in Sydney and move the camera
         LatLng currentUser = new LatLng(currentLatitude, currentLongitude);
-        mMap.addMarker(new MarkerOptions().position(currentUser).title(this.username));
+
+        mMap.addMarker(new MarkerOptions().position(currentUser).title(username));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(currentUser));
     }
+
+
+
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        if(broadcastReceiver == null){
+//            broadcastReceiver = new BroadcastReceiver() {
+//                @Override
+//                public void onReceive(Context context, Intent intent) {
+//
+//                    Double latitude = intent.getExtras().getDouble(Constants.LATITUDE);
+//                    Double longitude = intent.getExtras().getDouble(Constants.LONGITUDE);
+//                    String username = intent.getExtras().getString(Constants.USERNAME);
+//
+//                    LatLng currentUser = new LatLng(latitude, longitude);
+//                    showMarkerOnTheMap(currentUser, username);
+//
+//                }
+//            };
+//        }
+//        registerReceiver(broadcastReceiver,new IntentFilter(Constants.LOCATION_UPDATE));
+//    }
+//
+//    @Override
+//    protected void onStop() {
+//        super.onStop();
+//        unregisterReceiver(broadcastReceiver);
+//    }
 }

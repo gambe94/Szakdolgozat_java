@@ -31,6 +31,7 @@ import java.util.Stack;
 
 import demeter.gabor.tracker.R;
 import demeter.gabor.tracker.UserMapsActivity;
+import demeter.gabor.tracker.Util.Constants;
 import demeter.gabor.tracker.models.MyLocation;
 import demeter.gabor.tracker.models.User;
 
@@ -40,11 +41,7 @@ import demeter.gabor.tracker.models.User;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
-
-    public static final String LONGITUDE = "longitude";
-    public static final String LATITUDE = "latitude";
-    public static final String USERNAME = "username";
-
+    public String selectedUserName;
 
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -53,7 +50,10 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         public TextView tvLongitude;
         public TextView tvLangitude;
         public TextView tvAddress;
+
         public ImageView userProfileImage;
+
+
 
         public ViewHolder(View itemView) {
             super(itemView);
@@ -115,10 +115,11 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             public void onClick(View view) {
 
                 if(context!= null) {
+                    selectedUserName = tempUser.getUsername();
                     Intent showUserdetails = new Intent(context,UserMapsActivity.class);
-                    showUserdetails.putExtra(LONGITUDE, tempUser.getLastLocation().getLongitude());
-                    showUserdetails.putExtra(LATITUDE, tempUser.getLastLocation().getLatitude());
-                    showUserdetails.putExtra(USERNAME, tempUser.getUsername());
+                    showUserdetails.putExtra(Constants.LONGITUDE, tempUser.getLastLocation().getLongitude());
+                    showUserdetails.putExtra(Constants.LATITUDE, tempUser.getLastLocation().getLatitude());
+                    showUserdetails.putExtra(Constants.USERNAME, tempUser.getUsername());
 
                     context.startActivity(showUserdetails);
                 }
@@ -150,13 +151,13 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                     sb.append(returnedAddress.getAddressLine(i)).append("\n");
                 }
                 strAdd = sb.toString();
-                Log.w("Current loction address", sb.toString());
+                //Log.w("Current loction address", sb.toString());
             } else {
-                Log.w("Current loction address", "No Address returned!");
+                //Log.w("Current loction address", "No Address returned!");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e("UserAdapter", String.valueOf(e.getStackTrace()));
+            //Log.e("UserAdapter", String.valueOf(e.getStackTrace()));
         }
         return strAdd;
     }
@@ -171,19 +172,37 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         userMap.put(key,user);
         notifyDataSetChanged();
     }
-    public void updateLastLocation(Map<String, Stack<MyLocation>> locationMap) {
-        for(String uid :locationMap.keySet()){
-            userMap.get(uid).setStackLocation(locationMap.get(uid));
+
+
+
+    public void updateLastLocation(MyLocation myLocation) {
+
+
+        Log.d("myLocation: ", String.valueOf(myLocation));
+        Log.d("UserMAP: ", userMap.toString());
+
+
+       if(myLocation != null && userMap.containsKey(myLocation.getUserId())){
+           userMap.get(myLocation.getUserId()).setLastLocations(myLocation);
+           notifyDataSetChanged();
+       }
+
+    }
+    public void updateLastLocation(List<MyLocation> locations) {
+        for(MyLocation loc :locations){
+            if(loc != null && userMap.containsKey(loc.getUserId())){
+                userMap.get(loc.getUserId()).setLastLocations(loc);
+            }
         }
-
-    }
-    public void updateLastLocation(String uId, MyLocation myLocation) {
-        userMap.get(uId).setLastLocations(myLocation);
+        notifyDataSetChanged();
     }
 
-    public Set<String> getUserUIds(){
-        return this.userMap.keySet();
+
+    public User getuserbyId(String uId){
+        return userMap.get(uId);
     }
+
+
 
     private void setAnimation(View viewToAnimate, int position) {
         if (position > lastPosition) {
