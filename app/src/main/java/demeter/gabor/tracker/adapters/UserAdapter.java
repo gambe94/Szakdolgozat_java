@@ -2,9 +2,11 @@ package demeter.gabor.tracker.adapters;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
@@ -24,9 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import demeter.gabor.tracker.R;
+import demeter.gabor.tracker.UserMapsActivity;
 import demeter.gabor.tracker.models.MyLocation;
 import demeter.gabor.tracker.models.User;
 
@@ -37,6 +41,9 @@ import demeter.gabor.tracker.models.User;
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
 
+    public static final String LONGITUDE = "longitude";
+    public static final String LATITUDE = "latitude";
+    public static final String USERNAME = "username";
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView tvUserName;
@@ -78,9 +85,12 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(final ViewHolder viewHolder, final int position) {
-        User tempUser = userList.get(position);
+        final User tempUser = userList.get(position);
         viewHolder.tvUserName.setText(tempUser.getUsername());
         viewHolder.tvUserEmail.setText(tempUser.getEmail());
+
+        //viewHolder.userProfileImage.setImageURI(Uri.parse(tempUser.getProfileImageURL()));
+        //Glide.with(context).load(tempUser.getProfileImageURL()).into(viewHolder.userProfileImage);
 
         if(tempUser.getLastLocation() == null){
             viewHolder.tvLongitude.setText("Nem Ismert");
@@ -96,6 +106,23 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             viewHolder.tvAddress.setText(getAddressFromMyLocation(tempUser));
 
         }
+
+
+        viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if(context!= null) {
+                    Intent showUserdetails = new Intent(context,UserMapsActivity.class);
+                    showUserdetails.putExtra(LONGITUDE, tempUser.getLastLocation().getLongitude());
+                    showUserdetails.putExtra(LATITUDE, tempUser.getLastLocation().getLatitude());
+                    showUserdetails.putExtra(USERNAME, tempUser.getUsername());
+
+                    context.startActivity(showUserdetails);
+                }
+            }
+        });
+
 
 /*
       if (!TextUtils.isEmpty(tempUser.getProfileImageURL())) {
@@ -146,8 +173,11 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         for(String uid :locationMap.keySet()){
             userMap.get(uid).setStackLocation(locationMap.get(uid));
         }
-
         notifyDataSetChanged();
+    }
+
+    public Set<String> getUserUIds(){
+        return this.userMap.keySet();
     }
 
     private void setAnimation(View viewToAnimate, int position) {

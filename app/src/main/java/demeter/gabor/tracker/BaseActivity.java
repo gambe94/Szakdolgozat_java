@@ -19,6 +19,15 @@ public class BaseActivity extends AppCompatActivity {
         mProgressDialog.show();
     }
 
+    public void showProgressDialogPercentage(double percentage) {
+        if (mProgressDialog == null) {
+            mProgressDialog.setCancelable(false);
+            mProgressDialog.setMessage("Uploaded" +(int)percentage+"%");
+        }
+
+        mProgressDialog.show();
+    }
+
     public void hideProgressDialog() {
         if (mProgressDialog != null && mProgressDialog.isShowing()) {
             mProgressDialog.dismiss();

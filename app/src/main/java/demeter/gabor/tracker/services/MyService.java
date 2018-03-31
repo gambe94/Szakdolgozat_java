@@ -56,7 +56,7 @@ public class MyService extends Service {
                 sendBroadcast(i);
 
                 if(currentUser != null){
-                    Log.d("MYservice",currentUser.getDisplayName());
+//                    Log.d("MYservice",currentUser.getDisplayName());
                     writeLocatointoFirebase(location);
 
                 }

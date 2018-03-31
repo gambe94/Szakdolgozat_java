@@ -5,12 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -25,7 +23,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -41,13 +38,18 @@ import demeter.gabor.tracker.services.MyService;
 
 public class MainActivity extends BaseActivity {
 
+    private static final String TAG = MainActivity.class.getName();
+
     private Button startBtn, stopBtn;
     private RecyclerView recyclerViewUsers;
     private UserAdapter usersAdapter;
     private DatabaseReference mUsersDatabase;
     private DatabaseReference userLocationReference;
 
+
+
     private BroadcastReceiver broadcastReceiver;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +70,8 @@ public class MainActivity extends BaseActivity {
         recyclerViewUsers.setLayoutManager(layoutManager);
         //recyclerViewUsers.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL)); design plusz egy vonal
         recyclerViewUsers.setAdapter(usersAdapter);
+
+
 
         startBtn = findViewById(R.id.startService);
         stopBtn = findViewById(R.id.stopService);
@@ -177,7 +181,7 @@ public class MainActivity extends BaseActivity {
         mUsersDatabase.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                Log.d("AUTHTLISTENER_Added:",dataSnapshot.toString());
+                Log.d(TAG,"AUTHTLISTENER_Added:"+ dataSnapshot.toString());
                 User newUser = dataSnapshot.getValue(User.class);
                 usersAdapter.addUser(newUser, dataSnapshot.getKey());
 
@@ -190,7 +194,7 @@ public class MainActivity extends BaseActivity {
 
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
-                Log.d("AUTHTLISTENER_Remove:",dataSnapshot.toString());
+                Log.d(TAG,"AUTHTLISTENER_Remove:"+ dataSnapshot.toString());
 
             }
 
@@ -205,8 +209,9 @@ public class MainActivity extends BaseActivity {
             }
         });
     }
-    // usersAdapter.updateLastLocation(dataSnapshot.getValue(MyLocation.class));
+
     private void initUserLocationListener() {
+
         userLocationReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {

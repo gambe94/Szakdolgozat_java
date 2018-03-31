@@ -3,6 +3,7 @@ package demeter.gabor.tracker.models;
 
 
 import android.location.Location;
+import android.net.Uri;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
@@ -17,7 +18,7 @@ public class User {
     private String username;
     private String email;
     private Stack<MyLocation> locations = new Stack<>();
-    private String profileImageURL;
+    private Uri profileImageURI;
 
     public User() {
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
@@ -26,6 +27,7 @@ public class User {
     public User(String username, String email) { // for login/sign in
         this.username = username;
         this.email = email;
+
     }
     public User(String username, String email, MyLocation loc) {
         this.username = username;
@@ -43,12 +45,12 @@ public class User {
         return null;
     }
 
-    public String getProfileImageURL() {
-        return profileImageURL;
+    public Uri getProfileImageURI() {
+        return profileImageURI;
     }
 
-    public void setProfileImageURL(String profileImageURL) {
-        this.profileImageURL = profileImageURL;
+    public void setProfileImageURI(Uri profileImageURI) {
+        this.profileImageURI = profileImageURI;
     }
 
     public String getUsername() {
