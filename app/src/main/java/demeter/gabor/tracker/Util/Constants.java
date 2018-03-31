@@ -13,4 +13,7 @@ public final class Constants {
     public static final String USERS_REF = "users";
     public static final String LOCATIONS_REF = "locations";
     public static final String LAST_KNOWN_LOCATIONS_REF = "last_known_location";
+
+    //For FireBase Storage
+    public static final String IMAGES_STORAGR_REF = "images";
 }

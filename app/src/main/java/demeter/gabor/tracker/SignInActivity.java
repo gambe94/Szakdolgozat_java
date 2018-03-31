@@ -1,13 +1,16 @@
 package demeter.gabor.tracker;
 
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -27,14 +30,17 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 import demeter.gabor.tracker.Util.BaseActivity;
+import demeter.gabor.tracker.Util.Constants;
 import demeter.gabor.tracker.models.User;
 
 public class SignInActivity extends BaseActivity implements View.OnClickListener {
 
     private static final String TAG = "SignInActivity";
     private static final int PICK_IMAGE_REQUEST = 1;
+
 
     private DatabaseReference mDatabase;
     private FirebaseAuth mAuth;
@@ -58,7 +64,7 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mAuth = FirebaseAuth.getInstance();
         mStorageRef = FirebaseStorage.getInstance().getReference();
-        mImagesRefecence =mStorageRef.child("images");
+        mImagesRefecence =mStorageRef.child(Constants.IMAGES_STORAGR_REF);
 
         // Views
         mEmailField = findViewById(R.id.field_email);
@@ -181,10 +187,10 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
 
     private void writeNewUser(String userId, String name, String email) {
 
-        User user = new User(name, email);
+        User user = new User(name, email, userId);
         mDatabase.child("users").child(userId).setValue(user);
         if(fromSignUp) {
-            //uploadImagetoFireBase();
+            uploadImagetoFireBase();
         }
 
     }
@@ -203,16 +209,32 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
                 && data != null && data.getData() != null )
         {
             userProfileImagePath = data.getData();
-            //                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), userProfileImagePath);
-//                userProfileImage.setImageBitmap(bitmap);
-            userProfileImage.setImageURI(this.userProfileImagePath);
 
-
+            Bitmap bitmap = null;
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), userProfileImagePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            userProfileImage.setImageBitmap(bitmap);
         }
+    }
+
+    public String GetFileExtension(Uri uri) {
+        ContentResolver contentResolver = getContentResolver();
+        MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
+
+        // Returning the file Extension.
+        return mimeTypeMap.getExtensionFromMimeType(contentResolver.getType(uri)) ;
+
     }
 
     private void uploadImagetoFireBase() {
         Log.d(TAG, "uploadImagetoFireBase: ");
+
+        if(userProfileImage == null){
+            return;
+        }
 
         userProfileImage.setDrawingCacheEnabled(true);
         userProfileImage.buildDrawingCache();

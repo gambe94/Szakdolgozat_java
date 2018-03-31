@@ -16,6 +16,7 @@ import java.util.Stack;
 public class User {
 
 
+    private String uId;
     private String username;
     private String email;
     private Stack<MyLocation> locations = new Stack<>();
@@ -25,9 +26,10 @@ public class User {
         // Default constructor required for calls to DataSnapshot.getValue(User.class)
     }
 
-    public User(String username, String email) { // for login/sign in
+    public User(String username, String email, String uId) { // for login/sign in
         this.username = username;
         this.email = email;
+        this.uId = uId;
 
     }
     public User(String username, String email, MyLocation loc) {
@@ -42,6 +44,14 @@ public class User {
             return this.locations.peek();
         }
         return null;
+    }
+
+    public String getuId() {
+        return uId;
+    }
+
+    public void setuId(String uId) {
+        this.uId = uId;
     }
 
     public Uri getProfileImageURI() {

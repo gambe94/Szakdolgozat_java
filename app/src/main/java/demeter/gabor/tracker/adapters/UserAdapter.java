@@ -120,6 +120,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                     showUserdetails.putExtra(Constants.LONGITUDE, tempUser.getLastLocation().getLongitude());
                     showUserdetails.putExtra(Constants.LATITUDE, tempUser.getLastLocation().getLatitude());
                     showUserdetails.putExtra(Constants.USERNAME, tempUser.getUsername());
+                    showUserdetails.putExtra(Constants.CURRENTUSER_UID, tempUser.getuId());
 
                     context.startActivity(showUserdetails);
                 }
