@@ -1,4 +1,4 @@
-package demeter.gabor.tracker;
+package demeter.gabor.tracker.Util;
 
 import android.app.ProgressDialog;
 import android.support.v7.app.AppCompatActivity;

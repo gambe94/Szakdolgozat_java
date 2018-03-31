@@ -11,16 +11,17 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import demeter.gabor.tracker.Util.Constants;
 import demeter.gabor.tracker.models.MyLocation;
 
 public class MyService extends Service {
+
 
     private LocationListener listener;
     private LocationManager locationManager;
@@ -45,14 +46,14 @@ public class MyService extends Service {
         currentUser = mAuth.getCurrentUser();
 
         database = FirebaseDatabase.getInstance();
-        locationsReference = database.getReference("locations");
+        locationsReference = database.getReference(Constants.LOCATIONS_REF);
 
         listener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                Intent i = new Intent("location_update");
-                i.putExtra("longitude",location.getLongitude());
-                i.putExtra("latitude",location.getLatitude());
+                Intent i = new Intent(Constants.LOCATION_UPDATE);
+                i.putExtra(Constants.LONGITUDE,location.getLongitude());
+                i.putExtra(Constants.LATITUDE,location.getLatitude());
                 sendBroadcast(i);
 
                 if(currentUser != null){

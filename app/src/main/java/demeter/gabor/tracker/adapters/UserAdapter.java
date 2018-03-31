@@ -45,6 +45,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     public static final String LATITUDE = "latitude";
     public static final String USERNAME = "username";
 
+
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public TextView tvUserName;
         public TextView tvUserEmail;
@@ -173,7 +175,10 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         for(String uid :locationMap.keySet()){
             userMap.get(uid).setStackLocation(locationMap.get(uid));
         }
-        notifyDataSetChanged();
+
+    }
+    public void updateLastLocation(String uId, MyLocation myLocation) {
+        userMap.get(uId).setLastLocations(myLocation);
     }
 
     public Set<String> getUserUIds(){

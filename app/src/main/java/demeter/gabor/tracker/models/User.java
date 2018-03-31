@@ -32,8 +32,6 @@ public class User {
     public User(String username, String email, MyLocation loc) {
         this.username = username;
         this.email = email;
-
-       // if(loc.getTime() > this.locations.peek()) {
         this.locations.push(loc);
 
     }
@@ -72,10 +70,18 @@ public class User {
 
 
     public void setLastLocations(MyLocation loc) {
-        this.locations.push(loc);
+        if(this.locations == null){
+            locations = new Stack<>();
+            locations.push(loc);
+        }else{
+            this.locations.push(loc);
+        }
+
     }
 
     public void setStackLocation(Stack<MyLocation> stackLocation) {
         this.locations = stackLocation;
     }
+
+
 }

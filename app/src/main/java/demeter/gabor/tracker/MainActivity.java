@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import demeter.gabor.tracker.Util.BaseActivity;
+import demeter.gabor.tracker.Util.Constants;
 import demeter.gabor.tracker.adapters.UserAdapter;
 import demeter.gabor.tracker.models.MyLocation;
 import demeter.gabor.tracker.models.User;
@@ -40,15 +42,21 @@ public class MainActivity extends BaseActivity {
 
     private static final String TAG = MainActivity.class.getName();
 
+
+
     private Button startBtn, stopBtn;
     private RecyclerView recyclerViewUsers;
     private UserAdapter usersAdapter;
     private DatabaseReference mUsersDatabase;
-    private DatabaseReference userLocationReference;
+    private DatabaseReference mLocationReference;
+
+
 
 
 
     private BroadcastReceiver broadcastReceiver;
+    private ValueEventListener locationLisener;
+    private ChildEventListener userListener;
 
 
     @Override
@@ -57,8 +65,12 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
 
         //DATABASES REFERENCE
-        mUsersDatabase = FirebaseDatabase.getInstance().getReference("users");
-        userLocationReference = FirebaseDatabase.getInstance().getReference("locations");
+        mUsersDatabase = FirebaseDatabase.getInstance().getReference(Constants.USERS_REF);
+        mLocationReference = FirebaseDatabase.getInstance().getReference(Constants.LOCATIONS_REF);
+
+        //Create Listeners
+        createLocationListerner();
+        createUserListerner();
 
         //SET VIEWS
         usersAdapter = new UserAdapter(getApplicationContext());
@@ -68,7 +80,7 @@ public class MainActivity extends BaseActivity {
         layoutManager.setReverseLayout(true);
         layoutManager.setStackFromEnd(true);
         recyclerViewUsers.setLayoutManager(layoutManager);
-        //recyclerViewUsers.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL)); design plusz egy vonal
+
         recyclerViewUsers.setAdapter(usersAdapter);
 
 
@@ -77,13 +89,80 @@ public class MainActivity extends BaseActivity {
         stopBtn = findViewById(R.id.stopService);
 
         //INIT DATABASES CHANGES LISTENER
-        initUsersListener();
-        initUserLocationListener(); //TODO: nem jo a listenre meg
+        mUsersDatabase.addChildEventListener(userListener);
+        mLocationReference.addValueEventListener(locationLisener);
 
         //CHECK PERMISSONS
         if (!runtime_permissions())
             enable_buttons();
 
+    }
+
+    private void createUserListerner() {
+        userListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                Log.d(TAG,"AUTHTLISTENER_Added:"+ dataSnapshot.toString());
+                User newUser = dataSnapshot.getValue(User.class);
+                usersAdapter.addUser(newUser, dataSnapshot.getKey());
+
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                Log.d(TAG,"AUTHTLISTENER_Changed:"+ dataSnapshot.toString());
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                Log.d(TAG,"AUTHTLISTENER_Remove:"+ dataSnapshot.toString());
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+    }
+
+    private void createLocationListerner() {
+        locationLisener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Map<String, Stack<MyLocation>> currentLocationByUser = new HashMap<>();
+
+
+                List<MyLocation> list = new ArrayList<>();
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    String uId = (String) ds.getKey();
+
+                    if(!currentLocationByUser.containsKey(uId) && !uId.equals(getUid())  ){
+                        currentLocationByUser.put(uId, new Stack<MyLocation>());
+                    }
+
+
+                    for (DataSnapshot dschield : ds.getChildren()) {
+                        MyLocation loc =dschield.getValue(MyLocation.class);
+                        if(!uId.equals(getUid())) {
+                            currentLocationByUser.get(uId).push(loc);
+                        }
+                    }
+                }
+
+                usersAdapter.updateLastLocation(currentLocationByUser);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
     }
 
 
@@ -95,14 +174,21 @@ public class MainActivity extends BaseActivity {
                 @Override
                 public void onReceive(Context context, Intent intent) {
 
-                    Double latitude = intent.getExtras().getDouble("latitude");
-                    Double longitude = intent.getExtras().getDouble("longitude");
+                    Double latitude = intent.getExtras().getDouble(Constants.LATITUDE);
+                    Double longitude = intent.getExtras().getDouble(Constants.LONGITUDE);
 
-                    //usersAdapter.updateLastLocation(new MyLocation(latitude,longitude));
+                    usersAdapter.updateLastLocation(getUid(), new MyLocation(latitude,longitude));
                 }
             };
         }
-        registerReceiver(broadcastReceiver,new IntentFilter("location_update"));
+        registerReceiver(broadcastReceiver,new IntentFilter(Constants.LOCATION_UPDATE));
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mUsersDatabase.removeEventListener(userListener);
+        mLocationReference.removeEventListener(locationLisener);
     }
 
     @Override
@@ -177,82 +263,8 @@ public class MainActivity extends BaseActivity {
         }
     }
 
-    private void initUsersListener() {
-        mUsersDatabase.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                Log.d(TAG,"AUTHTLISTENER_Added:"+ dataSnapshot.toString());
-                User newUser = dataSnapshot.getValue(User.class);
-                usersAdapter.addUser(newUser, dataSnapshot.getKey());
-
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-                Log.d(TAG,"AUTHTLISTENER_Remove:"+ dataSnapshot.toString());
-
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-    }
-
-    private void initUserLocationListener() {
-
-        userLocationReference.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Map<String, Stack<MyLocation>> currentLocationByUser = new HashMap<>();
-//                Log.d("evntListener datasn: ", dataSnapshot.toString());
-//                Log.d("evntListener snkey: ", dataSnapshot.getKey());
-//                Log.d("evntListener sndatava ", dataSnapshot.getValue().toString());
-
-                List<MyLocation> list = new ArrayList<>();
-                for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    String uId = (String) ds.getKey();
-
-                    if(!currentLocationByUser.containsKey(uId)){
-                        currentLocationByUser.put(uId, new Stack<MyLocation>());
-                    }
-
-//                    Log.d("evntListener ds: ", ds.toString());
-//                    Log.d("evntListener uid: ", ds.getKey());
-//                    Log.d("evntListener dschield:", ds.child(uId).toString()); //off value= null
-//                    Log.d("evntListener dsValue:", ds.getValue().toString()); //ez jó visszaadja az adott listát
-                    for (DataSnapshot dschield : ds.getChildren()) {
-//                        Log.d("evntListener dschield:", dschield.toString());
-//                        Log.d("evntListener dschield2:", dschield.getValue().toString());
-                        MyLocation loc =dschield.getValue(MyLocation.class);
-
-                        currentLocationByUser.get(uId).push(loc);
 
 
-                    }
-                }
-                usersAdapter.updateLastLocation(currentLocationByUser);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-
-
-    }
 
 
 
