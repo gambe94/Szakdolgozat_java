@@ -133,6 +133,13 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+
+        LatLng currentUser = new LatLng(currentLatitude, currentLongitude);
+
+        mMap.addMarker(new MarkerOptions().position(currentUser).title(username));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(currentUser));
+
+
     }
 
 //    public void refreshMarker(MarkerOptions userMarker){

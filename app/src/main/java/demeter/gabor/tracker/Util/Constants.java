@@ -14,6 +14,7 @@ public final class Constants {
     public static final String LOCATIONS_REF = "locations";
     public static final String LAST_KNOWN_LOCATIONS_REF = "last_known_location";
     public static final String IMAGES_REF = "images";
+    public static final String PROFILE_IMG = "profileImg";
 
     //For FireBase Storage
     public static final String IMAGES_STORAGR_REF = "images";

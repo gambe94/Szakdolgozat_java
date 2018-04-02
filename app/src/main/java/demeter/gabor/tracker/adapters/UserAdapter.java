@@ -209,6 +209,12 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         }
         notifyDataSetChanged();
     }
+    public void updateProfileImage(String uId, String profileImgURL){
+        if(userMap.containsKey(uId)){
+            userMap.get(uId).setProfileImageURL(profileImgURL);
+        }
+        notifyDataSetChanged();
+    }
 
 
 

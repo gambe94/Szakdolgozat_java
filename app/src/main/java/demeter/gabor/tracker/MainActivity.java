@@ -28,6 +28,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.storage.FirebaseStorage;
 
 import java.io.IOException;
@@ -67,7 +68,9 @@ public class MainActivity extends BaseActivity {
     private ValueEventListener locationListener;
     private ChildEventListener userListener;
     private ValueEventListener loadLastknownLocation;
-    private ValueEventListener imagesListener;
+    private ChildEventListener imagesListener;
+
+
 
 
 
@@ -86,9 +89,13 @@ public class MainActivity extends BaseActivity {
         mLastKnownLocation = FirebaseDatabase.getInstance().getReference(Constants.LAST_KNOWN_LOCATIONS_REF);
 
         mImages = FirebaseDatabase.getInstance().getReference(Constants.IMAGES_REF); //filed declared in baseActivity
+
         Log.d(TAG,"mImages 1: "+ String.valueOf(mImages));
         mLastLocationQuery = mLocationReference.orderByKey().limitToLast(1);
 
+
+        //Cloud Messaging
+      //  FirebaseMessaging.getInstance().subscribeToTopic("pushNotifications");
 
         //STORRAGE REFERENCE
         mStorageRef = FirebaseStorage.getInstance().getReference(); //filed declared in baseActivity
@@ -119,10 +126,9 @@ public class MainActivity extends BaseActivity {
 
         //INIT DATABASES CHANGES LISTENER
         mUsersDatabase.addChildEventListener(userListener);
-
+        mImages.addChildEventListener(imagesListener);
 
         //INIT variables
-
         tvLoginAs.setText(FirebaseAuth.getInstance().getCurrentUser().getEmail());
         //CHECK PERMISSONS
         if (!runtime_permissions())
@@ -132,18 +138,29 @@ public class MainActivity extends BaseActivity {
 
 
     private void createImageListener() {
-        imagesListener = new ValueEventListener() {
+
+        imagesListener = new ChildEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Map<String, String> imagesByPUserId = new HashMap<>();
-                for(DataSnapshot data : dataSnapshot.getChildren()){
-                    Log.d(TAG, "imagesListernes: " + data.toString());
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                String imageURL = dataSnapshot.getValue(String.class);
+                usersAdapter.updateProfileImage(dataSnapshot.getKey(), imageURL);
+            }
 
-                    String imageURL = data.getValue(String.class);
-                    imagesByPUserId.put(data.getKey(), imageURL);
-                }
-                usersAdapter.setUsersProfileImages(imagesByPUserId);
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                Log.d(TAG, "imagelistener change: " + dataSnapshot.toString());
+                String imageURL = dataSnapshot.getValue(String.class);
+                usersAdapter.updateProfileImage(dataSnapshot.getKey(), imageURL);
+            }
 
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                Log.d(TAG, "imagelistener remove: " + dataSnapshot.toString());
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                Log.d(TAG, "imagelistener moved: " + dataSnapshot.toString());
             }
 
             @Override
@@ -151,26 +168,27 @@ public class MainActivity extends BaseActivity {
 
             }
         };
+
     }
     private void createUserListener() {
         userListener = new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                Log.d(TAG,"AUTHTLISTENER_Added:"+ dataSnapshot.toString());
+                //Log.d(TAG,"AUTHTLISTENER_Added:"+ dataSnapshot.toString());
                 User newUser = dataSnapshot.getValue(User.class);
-                Log.d(TAG,"AUTHTLISTENER_Added:"+ newUser);
+                Log.d(TAG,"AUTHTLISTENER_Added:"+ newUser.toString());
                 usersAdapter.addUser(newUser, dataSnapshot.getKey());
 
             }
 
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                Log.d(TAG,"AUTHTLISTENER_Changed:"+ dataSnapshot.toString());
+                //Log.d(TAG,"AUTHTLISTENER_Changed:"+ dataSnapshot.toString());
             }
 
             @Override
             public void onChildRemoved(DataSnapshot dataSnapshot) {
-                Log.d(TAG,"AUTHTLISTENER_Remove:"+ dataSnapshot.toString());
+               // Log.d(TAG,"AUTHTLISTENER_Remove:"+ dataSnapshot.toString());
 
             }
 
@@ -188,16 +206,13 @@ public class MainActivity extends BaseActivity {
     private void createLocationListener() {
         locationListener = new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-
+            public void onDataChange(DataSnapshot dataSnapshot) {                ;
                 MyLocation loc;
                 for(DataSnapshot data : dataSnapshot.getChildren()){
                     Log.d(TAG, "Location Query"+ dataSnapshot.toString());
                     loc = data.getValue(MyLocation.class);
                     usersAdapter.updateLastLocation(loc);
                 }
-
-
             }
 
             @Override
@@ -242,14 +257,10 @@ public class MainActivity extends BaseActivity {
     protected void onStart() {
         super.onStart();
         Log.d(TAG, "eletciklus  ONSART");
-        //INIT FIREBASE EVENT LISTENERS When actevity is loaded
-        mLastKnownLocation.addListenerForSingleValueEvent(loadLastknownLocation); //order is important
 
-        //INIT DATABASES CHANGES LISTENER
+        //ADD DATABASES CHANGES LISTENER
+        mLastKnownLocation.addListenerForSingleValueEvent(loadLastknownLocation);
         mLastLocationQuery.addValueEventListener(locationListener);
-        mImages.addValueEventListener(imagesListener);
-
-
 
     }
 
@@ -258,6 +269,7 @@ public class MainActivity extends BaseActivity {
         super.onResume();
         Log.d(TAG, "eletciklus ONRESUME");
 
+        isSaveLastData = false;
         isSaveLastData = false;
 
         if(broadcastReceiver == null){
@@ -281,7 +293,7 @@ public class MainActivity extends BaseActivity {
 
         mLocationReference.removeEventListener(locationListener);
         mLastKnownLocation.removeEventListener(loadLastknownLocation);
-        mImages.removeEventListener(imagesListener);
+
 
         saveLastLocation();
     }
@@ -289,10 +301,12 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mImages.removeEventListener(imagesListener);
         mUsersDatabase.removeEventListener(userListener);
         if(broadcastReceiver != null){
             unregisterReceiver(broadcastReceiver);
         }
+        //FirebaseMessaging.getInstance().unsubscribeFromTopic("pushNotifications");
     }
 
     @Override

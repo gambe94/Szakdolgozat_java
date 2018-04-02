@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 public class BaseActivity extends AppCompatActivity {
 
     private static final String TAG = BaseActivity.class.getName();
+
     private ProgressDialog mProgressDialog;
 
 
@@ -78,7 +79,7 @@ public class BaseActivity extends AppCompatActivity {
         bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] data = baos.toByteArray();
 
-        UploadTask uploadTask = mImagesRefecence.child(getUid()).child("profileImg").putBytes(data);
+        UploadTask uploadTask = mImagesRefecence.child(getUid()).child(Constants.PROFILE_IMG).putBytes(data);
         uploadTask.addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception exception) {
@@ -92,7 +93,7 @@ public class BaseActivity extends AppCompatActivity {
                 Uri downloadUrl = taskSnapshot.getDownloadUrl();
                 Toast.makeText(getApplicationContext(), "Image Uploaded Successfully ", Toast.LENGTH_LONG).show();
                 Log.d("FireBase Upload",downloadUrl.toString());
-                Log.d(TAG,"mImages: "+ String.valueOf(mImages));
+
                 mImages.child(getUid()).setValue(downloadUrl.toString());
             }
         });
