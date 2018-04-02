@@ -5,8 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,7 +21,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -27,12 +28,13 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 import demeter.gabor.tracker.Util.BaseActivity;
 import demeter.gabor.tracker.Util.Constants;
@@ -52,16 +54,20 @@ public class MainActivity extends BaseActivity {
     private UserAdapter usersAdapter;
     private TextView tvLoginAs;
 
+    //Database reference manage Users
     private DatabaseReference mUsersDatabase;
+
+    //Database reference manage Location
     private DatabaseReference mLocationReference;
     private DatabaseReference mLastKnownLocation;
-
     private Query mLastLocationQuery;
 
-    private ValueEventListener locationLisener;
+
+    //EVENT Listenres
+    private ValueEventListener locationListener;
     private ChildEventListener userListener;
     private ValueEventListener loadLastknownLocation;
-
+    private ValueEventListener imagesListener;
 
 
 
@@ -79,11 +85,19 @@ public class MainActivity extends BaseActivity {
         mLocationReference = FirebaseDatabase.getInstance().getReference(Constants.LOCATIONS_REF);
         mLastKnownLocation = FirebaseDatabase.getInstance().getReference(Constants.LAST_KNOWN_LOCATIONS_REF);
 
+        mImages = FirebaseDatabase.getInstance().getReference(Constants.IMAGES_REF); //filed declared in baseActivity
+        Log.d(TAG,"mImages 1: "+ String.valueOf(mImages));
         mLastLocationQuery = mLocationReference.orderByKey().limitToLast(1);
 
+
+        //STORRAGE REFERENCE
+        mStorageRef = FirebaseStorage.getInstance().getReference(); //filed declared in baseActivity
+        mImagesRefecence = mStorageRef.child(Constants.IMAGES_STORAGR_REF); //filed declared in baseActivity
+
         //Create Listeners
-        createLocationListerner();
-        createUserListerner();
+        createLocationListener();
+        createUserListener();
+        createImageListener();
 
         //SET VIEWS
         tvLoginAs = (TextView) findViewById(R.id.loginAs);
@@ -98,17 +112,13 @@ public class MainActivity extends BaseActivity {
 
         recyclerViewUsers.setAdapter(usersAdapter);
 
-
-
         startBtn = findViewById(R.id.startService);
         stopBtn = findViewById(R.id.stopService);
 
+
+
         //INIT DATABASES CHANGES LISTENER
         mUsersDatabase.addChildEventListener(userListener);
-        mLastLocationQuery.addValueEventListener(locationLisener);
-
-        //INIT FIREBASE EVENT LISTENERS When actevity is loaded
-        mLastKnownLocation.addListenerForSingleValueEvent(loadLastknownLocation);
 
 
         //INIT variables
@@ -121,8 +131,28 @@ public class MainActivity extends BaseActivity {
     }
 
 
+    private void createImageListener() {
+        imagesListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Map<String, String> imagesByPUserId = new HashMap<>();
+                for(DataSnapshot data : dataSnapshot.getChildren()){
+                    Log.d(TAG, "imagesListernes: " + data.toString());
 
-    private void createUserListerner() {
+                    String imageURL = data.getValue(String.class);
+                    imagesByPUserId.put(data.getKey(), imageURL);
+                }
+                usersAdapter.setUsersProfileImages(imagesByPUserId);
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+    }
+    private void createUserListener() {
         userListener = new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
@@ -155,9 +185,8 @@ public class MainActivity extends BaseActivity {
             }
         };
     }
-
-    private void createLocationListerner() {
-        locationLisener = new ValueEventListener() {
+    private void createLocationListener() {
+        locationListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
@@ -207,16 +236,27 @@ public class MainActivity extends BaseActivity {
         };
     }
 
+
+
     @Override
     protected void onStart() {
         super.onStart();
+        Log.d(TAG, "eletciklus  ONSART");
+        //INIT FIREBASE EVENT LISTENERS When actevity is loaded
+        mLastKnownLocation.addListenerForSingleValueEvent(loadLastknownLocation); //order is important
+
+        //INIT DATABASES CHANGES LISTENER
+        mLastLocationQuery.addValueEventListener(locationListener);
+        mImages.addValueEventListener(imagesListener);
+
+
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
+        Log.d(TAG, "eletciklus ONRESUME");
 
         isSaveLastData = false;
 
@@ -238,15 +278,18 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        mUsersDatabase.removeEventListener(userListener);
-        mLocationReference.removeEventListener(locationLisener);
+
+        mLocationReference.removeEventListener(locationListener);
         mLastKnownLocation.removeEventListener(loadLastknownLocation);
+        mImages.removeEventListener(imagesListener);
+
         saveLastLocation();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mUsersDatabase.removeEventListener(userListener);
         if(broadcastReceiver != null){
             unregisterReceiver(broadcastReceiver);
         }
@@ -267,7 +310,11 @@ public class MainActivity extends BaseActivity {
             startActivity(new Intent(this, SignInActivity.class));
             finish();
             return true;
-        } else {
+        }  else if (i == R.id.uploadProfileImg) {
+            selectImageFromGallery();
+
+            return true;
+        }else {
             return super.onOptionsItemSelected(item);
         }
     }
@@ -314,6 +361,24 @@ public class MainActivity extends BaseActivity {
             }else {
                 runtime_permissions();
             }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == Constants.PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null )
+        {
+
+            Bitmap bitmap = null;
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), data.getData());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            uploadImagetoFireBase(bitmap);
+
         }
     }
 

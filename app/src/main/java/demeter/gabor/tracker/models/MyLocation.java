@@ -25,10 +25,10 @@ public class MyLocation{
 
     }
 
-    public MyLocation(Double latitude, Double longitude) {
+    public MyLocation(Double latitude, Double longitude, String userId) {
         this.latitude = latitude;
         this.longitude = longitude;
-      // this.timestamp = timestamp;
+        this.userId = userId;
 
     }
 

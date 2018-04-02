@@ -1,9 +1,5 @@
 package demeter.gabor.tracker;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -12,17 +8,13 @@ import android.util.Log;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -30,12 +22,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Stack;
 
 import demeter.gabor.tracker.Util.Constants;
-import demeter.gabor.tracker.adapters.UserAdapter;
 import demeter.gabor.tracker.models.MyLocation;
 
 public class UserMapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -65,6 +54,7 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "eletciklus ONCREATE");
         setContentView(R.layout.activity_user_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -92,6 +82,12 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
         mLastLocationQuery.addValueEventListener(locationLisener);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        //Log.d(TAG, "eletciklus ONSTART");
+    }
+
     private void createLocationListerner() {
         locationLisener = new ValueEventListener() {
             @Override
@@ -104,9 +100,7 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
 
                     Log.d(TAG, "Location loc"+ String.valueOf(loc));
                     Log.d(TAG, "uid"+ String.valueOf(uId));
-
-
-                    if(uId.equals(loc.getUserId()) && mMap != null){
+                    if(loc != null && uId.equals(loc.getUserId()) && mMap != null){
 
                         animateMarker(position++,new LatLng(currentLatitude,currentLongitude), new LatLng(loc.getLatitude(),loc.getLongitude()), false);
                         currentLongitude = loc.getLongitude();
@@ -224,9 +218,20 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
 //        registerReceiver(broadcastReceiver,new IntentFilter(Constants.LOCATION_UPDATE));
 //    }
 //
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "eletciklus ONPAUSE");
+        mLastLocationQuery.removeEventListener(locationLisener);
+        mLastKnownLocation.child(uId).setValue(new MyLocation(this.currentLatitude,this.currentLongitude,uId));
+    }
+
     @Override
     protected void onStop() {
         super.onStop();
-        mLastLocationQuery.removeEventListener(locationLisener);
+        Log.d(TAG, "eletciklus ONSTOP");
+
     }
 }

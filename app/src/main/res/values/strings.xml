@@ -12,4 +12,5 @@
     <string name="firebase_email">demetergabor94@gmail.com</string>
     <string name="firebase_password">abcd1234</string>
     <string name="title_activity_user_maps">Map</string>
+    <string name="upload_profile_image">Upload Profile Image</string>
 </resources>

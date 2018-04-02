@@ -92,7 +92,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         viewHolder.tvUserEmail.setText(tempUser.getEmail());
 
         //viewHolder.userProfileImage.setImageURI(Uri.parse(tempUser.getProfileImageURL()));
-        //Glide.with(context).load(tempUser.getProfileImageURL()).into(viewHolder.userProfileImage);
+
 
         if(tempUser.getLastLocation() == null){
             viewHolder.tvLongitude.setText("Nem Ismert");
@@ -126,9 +126,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                 }
             }
         });
+        //SET PROFILE IMAGE
 
-
-/*
       if (!TextUtils.isEmpty(tempUser.getProfileImageURL())) {
             Glide.with(context).load(tempUser.getProfileImageURL()).into(viewHolder.userProfileImage);
             viewHolder.userProfileImage.setVisibility(View.VISIBLE);
@@ -137,7 +136,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         }
 
         setAnimation(viewHolder.itemView, position);
-*/
+
     }
 
     private String getAddressFromMyLocation(User tempUser) {
@@ -203,6 +202,14 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         return userMap.get(uId);
     }
 
+    public void setUsersProfileImages(Map<String, String> imageURLByUserId){
+        for(String uId : imageURLByUserId.keySet()){
+            if(userMap.containsKey(uId))
+            userMap.get(uId).setProfileImageURL(imageURLByUserId.get(uId));
+        }
+        notifyDataSetChanged();
+    }
+
 
 
     private void setAnimation(View viewToAnimate, int position) {
@@ -213,5 +220,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             lastPosition = position;
         }
     }
+
+
+
 
 }

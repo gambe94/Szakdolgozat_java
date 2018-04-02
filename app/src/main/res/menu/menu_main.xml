@@ -8,4 +8,9 @@
         android:title="@string/menu_logout"
         android:visible="true"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/uploadProfileImg"
+        android:title="@string/upload_profile_image"
+        android:visible="true"
+        app:showAsAction="never" />
 </menu>
