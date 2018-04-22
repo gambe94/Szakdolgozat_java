@@ -13,4 +13,10 @@
     <string name="firebase_password">abcd1234</string>
     <string name="title_activity_user_maps">Map</string>
     <string name="upload_profile_image">Upload Profile Image</string>
+
+    <string name="default_notification_channel_id" translatable="false">fcm_default_channel</string>
+    <string name="default_notification_channel_name">Default Notification Channel</string>
+
+    <string name="authorization_key">key=AAAApDtEFJA:APA91bFLHDi4WdJEdIxTUkUN9iXtECqC9gyU4GTu5-h6-ZrHD93FufJXAu40h_wxmB331nvTx1SLciYZAc2BqPlzv4svAZMw8uXStTK82zg9WNA0bYm3j1-1RQSVKEm5eVvJpDpVyHIj</string>
+    <string name="notificatoin_path">/topics/pushNotifications</string>
 </resources>

@@ -144,7 +144,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
         try {
             List<Address> addresses = geocoder.getFromLocation(tempUser.getLastLocation().getLatitude(), tempUser.getLastLocation().getLongitude(), 1);
-            if (addresses != null) {
+            if (addresses != null && !addresses.isEmpty()) {
                 Address returnedAddress = addresses.get(0);
                 StringBuilder sb = new StringBuilder("");
                 for (int i = 0; i <= returnedAddress.getMaxAddressLineIndex(); i++) {

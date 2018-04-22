@@ -1,13 +1,17 @@
 package demeter.gabor.tracker;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -19,6 +23,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -29,9 +34,16 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.RemoteMessage;
 import com.google.firebase.storage.FirebaseStorage;
 
+import org.json.JSONObject;
+
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -94,8 +106,20 @@ public class MainActivity extends BaseActivity {
         mLastLocationQuery = mLocationReference.orderByKey().limitToLast(1);
 
 
-        //Cloud Messaging
-      //  FirebaseMessaging.getInstance().subscribeToTopic("pushNotifications");
+        //CLOUD MESSAGING
+
+        FirebaseMessaging.getInstance().subscribeToTopic("pushNotifications");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Create channel to show notifications.
+            String channelId  = getString(R.string.default_notification_channel_id);
+            String channelName = getString(R.string.default_notification_channel_name);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW));
+        }
+
+
+
 
         //STORRAGE REFERENCE
         mStorageRef = FirebaseStorage.getInstance().getReference(); //filed declared in baseActivity
@@ -121,6 +145,7 @@ public class MainActivity extends BaseActivity {
 
         startBtn = findViewById(R.id.startService);
         stopBtn = findViewById(R.id.stopService);
+
 
 
 
@@ -306,7 +331,8 @@ public class MainActivity extends BaseActivity {
         if(broadcastReceiver != null){
             unregisterReceiver(broadcastReceiver);
         }
-        //FirebaseMessaging.getInstance().unsubscribeFromTopic("pushNotifications");
+
+        FirebaseMessaging.getInstance().unsubscribeFromTopic("pushNotifications");
     }
 
     @Override
@@ -338,8 +364,9 @@ public class MainActivity extends BaseActivity {
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i =new Intent(getApplicationContext(),MyService.class);
+                Intent i = new Intent(getApplicationContext(), MyService.class);
                 startService(i);
+                sendFCMNotificationToOthers();
             }
         });
 
@@ -353,6 +380,71 @@ public class MainActivity extends BaseActivity {
             }
         });
 
+    }
+
+    private void sendFCMNotificationToOthers()  {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                HttpURLConnection conn = null;
+                try {
+                    Log.d(TAG, "MY Post thread started");
+                    Thread.sleep(300);
+                    URL url = new URL("https://gcm-http.googleapis.com/gcm/send");
+
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
+                    conn.setRequestProperty("Accept", "application/json");
+                    conn.setRequestProperty("Authorization", getString(R.string.authorization_key));
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("to", getString(R.string.notificatoin_path));
+
+                    JSONObject dataChield = new JSONObject();
+                    dataChield.put(Constants.CURRENTUSER_UID, getUid());
+                    User currentUser = usersAdapter.getuserbyId(getUid());
+                    dataChield.put(Constants.USERNAME, currentUser.getUsername());
+                    dataChield.put(Constants.LATITUDE, currentUser.getLastLocation().getLatitude());
+                    dataChield.put(Constants.LONGITUDE, currentUser.getLastLocation().getLongitude());
+
+                    jsonObject.put("data",  dataChield);
+
+
+                    JSONObject notificationChield = new JSONObject();
+
+                    notificationChield.put("title", "Help for, " + currentUser.getUsername());
+                    notificationChield.put("text", "View his position on Map");
+
+                    jsonObject.put("notification", notificationChield);
+
+                    Log.i("JSON", jsonObject.toString());
+
+                    DataOutputStream os = new DataOutputStream(conn.getOutputStream());
+                    //os.writeBytes(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
+                    os.writeBytes(jsonObject.toString());
+
+                    os.flush();
+                    os.close();
+
+                    Log.i("STATUS", String.valueOf(conn.getResponseCode()));
+
+                    Log.i("MSG" , conn.getResponseMessage());
+
+                    conn.disconnect();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }finally {
+                    if(conn != null){
+                        conn.disconnect();
+                    }
+                }
+            }
+        });
+
+        thread.start();
     }
 
     private boolean runtime_permissions() {

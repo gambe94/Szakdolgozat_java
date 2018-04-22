@@ -12,8 +12,13 @@ import android.util.Log;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import demeter.gabor.tracker.MainActivity;
 import demeter.gabor.tracker.R;
+import demeter.gabor.tracker.UserMapsActivity;
+import demeter.gabor.tracker.Util.Constants;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -22,39 +27,62 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
 
-        String notificationTitle = null, notificationBody = null;
 
         // Check if message contains a notification payload.
         if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
-            notificationTitle = remoteMessage.getNotification().getTitle();
-            notificationBody = remoteMessage.getNotification().getBody();
-        }
+            String title = remoteMessage.getNotification().getTitle(); //get title
+            String message = remoteMessage.getNotification().getBody(); //get message
 
-        // Also if you intend on generating your own notifications as a result of a received FCM
-        // message, here is where that should be initiated. See sendNotification method below.
-        sendNotification(notificationTitle, notificationBody);
+            Map<String, String> extras = new HashMap<>();
+
+            if(remoteMessage.getData().size() > 0){
+                extras.put(Constants.LONGITUDE, remoteMessage.getData().get(Constants.LONGITUDE));
+                extras.put(Constants.LATITUDE, remoteMessage.getData().get(Constants.LATITUDE));
+                extras.put(Constants.USERNAME, remoteMessage.getData().get(Constants.USERNAME));
+                extras.put(Constants.CURRENTUSER_UID, remoteMessage.getData().get(Constants.CURRENTUSER_UID));
+            }
+
+            Log.d(TAG, "Message Notification Title: " + title);
+            Log.d(TAG, "Message Notification Body: " + message);
+
+            sendNotification(title, message, extras);
+        }
     }
 
+    @Override
+    public void onDeletedMessages() {
 
-       private void sendNotification(String notificationTitle, String notificationBody) {
-        Intent intent = new Intent(this, MainActivity.class);
+    }
+
+    private void sendNotification(String title,String messageBody, Map<String,String> extras) {
+        Intent intent = new Intent(this, UserMapsActivity.class);
+        for(String key : extras.keySet()){
+            if(key == Constants.LATITUDE || key== Constants.LONGITUDE){
+                intent.putExtra(key, Double.parseDouble(extras.get(key)));
+            }else{
+                intent.putExtra(key, extras.get(key));
+            }
+        }
+
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                 PendingIntent.FLAG_ONE_SHOT);
 
+
+
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
-                .setAutoCancel(true)   //Automatically delete the notification
-                .setSmallIcon(R.mipmap.ic_launcher) //Notification icon
-                .setContentIntent(pendingIntent)
-                .setContentTitle(notificationTitle)
-                .setContentText(notificationBody)
-                .setSound(defaultSoundUri);
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setChannelId(getString(R.string.default_notification_channel_id))
+                .setContentTitle(title)
+                .setContentText(messageBody)
+                .setAutoCancel(true)
+                .setSound(defaultSoundUri)
+                .setContentIntent(pendingIntent);
 
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        notificationManager.notify(0, notificationBuilder.build());
+        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
     }
 }

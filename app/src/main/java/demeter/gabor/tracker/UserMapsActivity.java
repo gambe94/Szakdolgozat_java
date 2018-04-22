@@ -1,5 +1,8 @@
 package demeter.gabor.tracker;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -21,6 +24,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.Stack;
 
@@ -69,11 +73,10 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
 
         mLastLocationQuery = mLocationReference.orderByKey().limitToLast(1);
 
-        //GET DATA FROM INENT
-        currentLongitude = getIntent().getDoubleExtra(Constants.LONGITUDE, 0);
-        currentLatitude = getIntent().getDoubleExtra(Constants.LATITUDE, 0);
-        username = getIntent().getStringExtra(Constants.USERNAME);
-        uId = getIntent().getStringExtra(Constants.CURRENTUSER_UID);
+
+
+
+
 
         markers = new Stack<>();
 
@@ -85,7 +88,13 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
     @Override
     protected void onStart() {
         super.onStart();
-        //Log.d(TAG, "eletciklus ONSTART");
+        Log.d(TAG, "eletciklus ONSTART");
+
+        //GET DATA FROM INENT
+        currentLongitude = getIntent().getDoubleExtra(Constants.LONGITUDE, 0);
+        currentLatitude = getIntent().getDoubleExtra(Constants.LATITUDE, 0);
+        username = getIntent().getStringExtra(Constants.USERNAME);
+        uId = getIntent().getStringExtra(Constants.CURRENTUSER_UID);
     }
 
     private void createLocationListerner() {
@@ -99,9 +108,9 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
                     MyLocation loc = data.getValue(MyLocation.class);
 
                     Log.d(TAG, "Location loc"+ String.valueOf(loc));
-                    Log.d(TAG, "uid"+ String.valueOf(uId));
+                    Log.d(TAG, "uid "+ String.valueOf(uId));
                     if(loc != null && uId.equals(loc.getUserId()) && mMap != null){
-
+                        mMap.clear();
                         animateMarker(position++,new LatLng(currentLatitude,currentLongitude), new LatLng(loc.getLatitude(),loc.getLongitude()), false);
                         currentLongitude = loc.getLongitude();
                         currentLatitude = loc.getLatitude();
@@ -134,22 +143,15 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        LatLng currentUser = new LatLng(currentLatitude, currentLongitude);
+        LatLng currentUserPosition = new LatLng(currentLatitude, currentLongitude);
 
-        mMap.addMarker(new MarkerOptions().position(currentUser).title(username));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(currentUser));
+        mMap.addMarker(new MarkerOptions().position(currentUserPosition).title(username));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(currentUserPosition));
 
 
     }
 
-//    public void refreshMarker(MarkerOptions userMarker){
-//        if(mMap != null){
-//            LatLng currentUser = new LatLng(currentLatitude, currentLongitude);
-//
-//            mMap.addMarker(userMarker.position(currentUser).title(username));
-//            mMap.moveCamera(CameraUpdateFactory.newLatLng(currentUser));
-//        }
-//    }
+
 
     //This methos is used to move the marker of each car smoothly when there are any updates of their position
     public void animateMarker(final int position, final LatLng startPosition, final LatLng toPosition,
@@ -166,7 +168,7 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
             markers.pop().visible(false);
         }
         markers.push(myMarker);
-
+        mMap.clear();
         final Marker marker = mMap.addMarker(myMarker);
 
 
@@ -203,28 +205,6 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
             }
         });
     }
-
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        if(broadcastReceiver == null){
-//            broadcastReceiver = new BroadcastReceiver() {
-//                @Override
-//                public void onReceive(Context context, Intent intent) {
-//
-//                    Double latitude = intent.getExtras().getDouble(Constants.LATITUDE);
-//                    Double longitude = intent.getExtras().getDouble(Constants.LONGITUDE);
-//                    String username = intent.getExtras().getString(Constants.USERNAME);
-//
-//                    LatLng currentUser = new LatLng(latitude, longitude);
-//                    showMarkerOnTheMap(currentUser, username);
-//
-//                }
-//            };
-//        }
-//        registerReceiver(broadcastReceiver,new IntentFilter(Constants.LOCATION_UPDATE));
-//    }
-//
 
 
     @Override
