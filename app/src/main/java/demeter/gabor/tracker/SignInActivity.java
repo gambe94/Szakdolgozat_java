@@ -32,13 +32,7 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
 
     private static final String TAG = "SignInActivity";
 
-
-
-
     private FirebaseAuth mAuth;
-
-
-
 
     private EditText mEmailField;
     private EditText mPasswordField;
@@ -60,7 +54,7 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
         mDatabase = FirebaseDatabase.getInstance().getReference(); //filed declared in baseActivity
         mAuth = FirebaseAuth.getInstance();
         mStorageRef = FirebaseStorage.getInstance().getReference(); //filed declared in baseActivity
-        mImagesRefecence =mStorageRef.child(Constants.IMAGES_STORAGR_REF); //filed declared in baseActivity
+        mImagesRefecence = mStorageRef.child(Constants.IMAGES_STORAGR_REF); //filed declared in baseActivity
 
         // Views
         mEmailField = findViewById(R.id.field_email);
@@ -129,7 +123,7 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
                         Log.d(TAG, "createUser:onComplete:" + task.isSuccessful());
                         hideProgressDialog();
                         if (task.isSuccessful()) {
-                            if(isSelectedImage){
+                            if (isSelectedImage) {
                                 uploadImagetoFireBase(userProfileImage.getDrawingCache());
                             }
 
@@ -150,7 +144,6 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
 
         // Go to MainActivity
         startActivity(new Intent(SignInActivity.this, MainActivity.class));
-       // startActivity(new Intent(SignInActivity.this, DebugActivity.class));
         finish();
     }
 
@@ -186,18 +179,14 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
 
         User user = new User(name, email, userId);
         mDatabase.child(Constants.USERS_REF).child(userId).setValue(user);
-
-
     }
-
 
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == Constants.PICK_IMAGE_REQUEST && resultCode == RESULT_OK
-                && data != null && data.getData() != null )
-        {
+        if (requestCode == Constants.PICK_IMAGE_REQUEST && resultCode == RESULT_OK
+                && data != null && data.getData() != null) {
             userProfileImagePath = data.getData();
 
             Bitmap bitmap = null;
@@ -215,10 +204,6 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
     }
 
 
-
-
-
-
     @Override
     public void onClick(View v) {
         int i = v.getId();
@@ -226,8 +211,8 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
             signIn();
         } else if (i == R.id.button_sign_up) {
             signUp();
-        } else if(i == R.id.userProfileImage){
-            selectImageFromGallery();
+        } else if (i == R.id.userProfileImage) {
+            selectImageFromGallery(); //Base Activity
         }
     }
 }

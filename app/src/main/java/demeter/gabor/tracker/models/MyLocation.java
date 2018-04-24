@@ -20,7 +20,6 @@ public class MyLocation{
         this.latitude =loc.getLatitude();
         this.longitude = loc.getLongitude();
         this.userId =userId;
-       // this.timestamp = timestamp;
 
 
     }
@@ -56,13 +55,6 @@ public class MyLocation{
         this.latitude = latitude;
     }
 
-//    public Timestamp getTimestamp() {
-//        return timestamp;
-//    }
-//
-//    public void setTimestamp(Timestamp timestamp) {
-//        this.timestamp = timestamp;
-//    }
 
 
     @Override

@@ -3,7 +3,6 @@ package demeter.gabor.tracker.Util;
 public final class Constants {
 
     //For Location update
-    public static final String LOCATION_UPDATE = "location_update";
     public static final String LONGITUDE = "longitude";
     public static final String LATITUDE = "latitude";
     public static final String CURRENTUSER_UID = "userUId";
@@ -18,6 +17,9 @@ public final class Constants {
 
     //For FireBase Storage
     public static final String IMAGES_STORAGR_REF = "images";
+
+    //FireBase Cloud Messaging
+    public static final String PUSH_NOTIFICATIONS = "pushNotifications";
 
 
     //ACTIVITY RESULT

@@ -17,7 +17,8 @@
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="@dimen/activity_vertical_margin"
         android:scaleType="centerCrop"
-        android:src="@drawable/anonymusprofileimg" />
+        android:src="@drawable/anonymusprofileimg"
+        android:contentDescription="userprofileImage" />
 
     <LinearLayout
         android:id="@+id/layout_email_password"

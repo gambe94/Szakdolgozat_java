@@ -20,9 +20,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import demeter.gabor.tracker.Util.Constants;
 import demeter.gabor.tracker.models.MyLocation;
 
-public class MyService extends Service {
-
-
+public class LocationService extends Service {
 
     private LocationListener listener;
     private LocationManager locationManager;
@@ -41,8 +39,6 @@ public class MyService extends Service {
     @Override
     public void onCreate() {
 
-
-
         mAuth = FirebaseAuth.getInstance();
         currentUser = mAuth.getCurrentUser();
 
@@ -52,16 +48,10 @@ public class MyService extends Service {
         listener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-//                Intent i = new Intent(Constants.LOCATION_UPDATE);
-//                i.putExtra(Constants.LONGITUDE,location.getLongitude());
-//                i.putExtra(Constants.LATITUDE,location.getLatitude());
-//                i.putExtra(Constants.LONGITUDE,location.getLongitude());
-//                sendBroadcast(i);
 
-                if(currentUser != null){
-//                    Log.d("MYservice",currentUser.getDisplayName());
+
+                if (currentUser != null) {
                     writeLocatoinToFirebase(location);
-
                 }
             }
 
@@ -86,16 +76,15 @@ public class MyService extends Service {
         locationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
 
         //noinspection MissingPermission
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,3000,200,listener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 200, listener);
 
     }
-
 
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(locationManager != null){
+        if (locationManager != null) {
             //noinspection MissingPermission
             locationManager.removeUpdates(listener);
         }

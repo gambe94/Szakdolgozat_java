@@ -3,15 +3,11 @@ package demeter.gabor.tracker;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -23,7 +19,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -34,7 +29,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.RemoteMessage;
 import com.google.firebase.storage.FirebaseStorage;
 
 import org.json.JSONObject;
@@ -43,18 +37,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import demeter.gabor.tracker.Util.BaseActivity;
 import demeter.gabor.tracker.Util.Constants;
 import demeter.gabor.tracker.adapters.UserAdapter;
 import demeter.gabor.tracker.models.MyLocation;
 import demeter.gabor.tracker.models.User;
-import demeter.gabor.tracker.services.MyService;
+import demeter.gabor.tracker.services.LocationService;
 
 public class MainActivity extends BaseActivity {
 
@@ -86,7 +77,7 @@ public class MainActivity extends BaseActivity {
 
 
 
-    private BroadcastReceiver broadcastReceiver;
+
     private boolean isSaveLastData;
 
 
@@ -102,13 +93,13 @@ public class MainActivity extends BaseActivity {
 
         mImages = FirebaseDatabase.getInstance().getReference(Constants.IMAGES_REF); //filed declared in baseActivity
 
-        Log.d(TAG,"mImages 1: "+ String.valueOf(mImages));
+
         mLastLocationQuery = mLocationReference.orderByKey().limitToLast(1);
 
 
         //CLOUD MESSAGING
 
-        FirebaseMessaging.getInstance().subscribeToTopic("pushNotifications");
+        FirebaseMessaging.getInstance().subscribeToTopic(Constants.PUSH_NOTIFICATIONS);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Create channel to show notifications.
@@ -131,10 +122,10 @@ public class MainActivity extends BaseActivity {
         createImageListener();
 
         //SET VIEWS
-        tvLoginAs = (TextView) findViewById(R.id.loginAs);
+        tvLoginAs = findViewById(R.id.loginAs);
 
         usersAdapter = new UserAdapter(getApplicationContext());
-        recyclerViewUsers = (RecyclerView) findViewById(
+        recyclerViewUsers = findViewById(
                 R.id.recyclerViewUsers);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setReverseLayout(true);
@@ -231,7 +222,7 @@ public class MainActivity extends BaseActivity {
     private void createLocationListener() {
         locationListener = new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {                ;
+            public void onDataChange(DataSnapshot dataSnapshot) {
                 MyLocation loc;
                 for(DataSnapshot data : dataSnapshot.getChildren()){
                     Log.d(TAG, "Location Query"+ dataSnapshot.toString());
@@ -295,21 +286,6 @@ public class MainActivity extends BaseActivity {
         Log.d(TAG, "eletciklus ONRESUME");
 
         isSaveLastData = false;
-        isSaveLastData = false;
-
-        if(broadcastReceiver == null){
-            broadcastReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-
-                    Double latitude = intent.getExtras().getDouble(Constants.LATITUDE);
-                    Double longitude = intent.getExtras().getDouble(Constants.LONGITUDE);
-
-                    //usersAdapter.updateLastLocation(getUid(), new MyLocation(latitude,longitude));
-                }
-            };
-        }
-        registerReceiver(broadcastReceiver,new IntentFilter(Constants.LOCATION_UPDATE));
     }
 
     @Override
@@ -328,11 +304,8 @@ public class MainActivity extends BaseActivity {
         super.onDestroy();
         mImages.removeEventListener(imagesListener);
         mUsersDatabase.removeEventListener(userListener);
-        if(broadcastReceiver != null){
-            unregisterReceiver(broadcastReceiver);
-        }
 
-        FirebaseMessaging.getInstance().unsubscribeFromTopic("pushNotifications");
+        FirebaseMessaging.getInstance().unsubscribeFromTopic(Constants.PUSH_NOTIFICATIONS);
     }
 
     @Override
@@ -364,7 +337,7 @@ public class MainActivity extends BaseActivity {
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i = new Intent(getApplicationContext(), MyService.class);
+                Intent i = new Intent(getApplicationContext(), LocationService.class);
                 startService(i);
                 sendFCMNotificationToOthers();
             }
@@ -374,7 +347,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onClick(View view) {
 
-                Intent i = new Intent(getApplicationContext(),MyService.class);
+                Intent i = new Intent(getApplicationContext(),LocationService.class);
                 stopService(i);
 
             }
@@ -405,7 +378,7 @@ public class MainActivity extends BaseActivity {
 
                     JSONObject dataChield = new JSONObject();
                     dataChield.put(Constants.CURRENTUSER_UID, getUid());
-                    User currentUser = usersAdapter.getuserbyId(getUid());
+                    User currentUser = usersAdapter.getUserbyId(getUid());
                     dataChield.put(Constants.USERNAME, currentUser.getUsername());
                     dataChield.put(Constants.LATITUDE, currentUser.getLastLocation().getLatitude());
                     dataChield.put(Constants.LONGITUDE, currentUser.getLastLocation().getLongitude());
@@ -448,7 +421,8 @@ public class MainActivity extends BaseActivity {
     }
 
     private boolean runtime_permissions() {
-        if(Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+        if(Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
 
             requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION},100);
 
@@ -489,10 +463,10 @@ public class MainActivity extends BaseActivity {
     }
 
 
-    public  void saveLastLocation(){
+    private void saveLastLocation(){
         Log.d(TAG, "saveLastLocation: "+ isSaveLastData);
         if(!isSaveLastData){
-            mLastKnownLocation.child(getUid()).setValue(usersAdapter.getuserbyId(getUid()).getLastLocation());
+            mLastKnownLocation.child(getUid()).setValue(usersAdapter.getUserbyId(getUid()).getLastLocation());
             isSaveLastData = true;
         }
 

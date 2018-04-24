@@ -44,7 +44,7 @@ public class DebugActivity extends BaseActivity {
         mStorageRef = FirebaseStorage.getInstance().getReference();
         mImagesRefecence = mStorageRef.child("images");
 
-        myimageView = (ImageView) findViewById(R.id.userProfileImage);
+        myimageView = findViewById(R.id.userProfileImage);
 
         initListeners();
     }
@@ -62,7 +62,7 @@ public class DebugActivity extends BaseActivity {
 
                 List<MyLocation> list = new ArrayList<>();
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
-                    String uId = (String) ds.getKey();
+                    String uId = ds.getKey();
 
 
 //                    Log.d("DebugActivity ds: ", ds.toString());

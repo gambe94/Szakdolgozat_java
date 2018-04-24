@@ -7,10 +7,7 @@
     <string name="sign_in">Sign In</string>
     <string name="menu_logout">Log out</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="firebase_email">demetergabor94@gmail.com</string>
-    <string name="firebase_password">abcd1234</string>
+
     <string name="title_activity_user_maps">Map</string>
     <string name="upload_profile_image">Upload Profile Image</string>
 
@@ -19,4 +16,5 @@
 
     <string name="authorization_key">key=AAAApDtEFJA:APA91bFLHDi4WdJEdIxTUkUN9iXtECqC9gyU4GTu5-h6-ZrHD93FufJXAu40h_wxmB331nvTx1SLciYZAc2BqPlzv4svAZMw8uXStTK82zg9WNA0bYm3j1-1RQSVKEm5eVvJpDpVyHIj</string>
     <string name="notificatoin_path">/topics/pushNotifications</string>
+    <string name="unknown">Nem Ismert</string>
 </resources>

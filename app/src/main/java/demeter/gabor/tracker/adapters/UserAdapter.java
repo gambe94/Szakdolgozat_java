@@ -1,12 +1,9 @@
 package demeter.gabor.tracker.adapters;
 
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.Location;
-import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
@@ -20,14 +17,11 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
 
 import demeter.gabor.tracker.R;
 import demeter.gabor.tracker.UserMapsActivity;
@@ -41,34 +35,11 @@ import demeter.gabor.tracker.models.User;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
-    public String selectedUserName;
+    private static final String TAG = UserAdapter.class.getName();
 
-
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-        public TextView tvUserName;
-        public TextView tvUserEmail;
-        public TextView tvLongitude;
-        public TextView tvLangitude;
-        public TextView tvAddress;
-
-        public ImageView userProfileImage;
-
-
-
-        public ViewHolder(View itemView) {
-            super(itemView);
-            tvUserName = (TextView) itemView.findViewById(R.id.tvUserName);
-            tvUserEmail = (TextView) itemView.findViewById(R.id.tvUserEmail);
-            tvLongitude = (TextView) itemView.findViewById(R.id.tvLongitude);
-            tvLangitude = (TextView) itemView.findViewById(R.id.tvLangitude);
-            tvAddress = (TextView) itemView.findViewById(R.id.tvAddress);
-            userProfileImage = (ImageView) itemView.findViewById(R.id.userProfileImage);
-        }
-    }
-
-    private Context context;
-    private List<User> userList;
-    private Map<String, User> userMap;
+    private final Context context;
+    private final List<User> userList;
+    private final Map<String, User> userMap;
     private int lastPosition = -1;
 
     public UserAdapter(Context context) {
@@ -77,12 +48,37 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         this.userMap = new HashMap<>();
     }
 
+
+    public static class ViewHolder extends RecyclerView.ViewHolder {
+        final TextView tvUserName;
+        final TextView tvUserEmail;
+        final TextView tvLongitude;
+        final TextView tvLatitude;
+        final TextView tvAddress;
+
+        final ImageView userProfileImage;
+
+
+
+        ViewHolder(View itemView) {
+            super(itemView);
+            tvUserName = itemView.findViewById(R.id.tvUserName);
+            tvUserEmail = itemView.findViewById(R.id.tvUserEmail);
+            tvLongitude = itemView.findViewById(R.id.tvLongitude);
+            tvLatitude = itemView.findViewById(R.id.tvLangitude);
+            tvAddress = itemView.findViewById(R.id.tvAddress);
+            userProfileImage = itemView.findViewById(R.id.userProfileImage);
+        }
+    }
+
+
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-        View v = LayoutInflater.from(viewGroup.getContext())
+        View myView = LayoutInflater.from(viewGroup.getContext())
                 .inflate(R.layout.user_item, viewGroup, false);
-        ViewHolder vh = new ViewHolder(v);
-        return vh;
+        return new ViewHolder(myView);
+
     }
 
     @Override
@@ -91,43 +87,34 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         viewHolder.tvUserName.setText(tempUser.getUsername());
         viewHolder.tvUserEmail.setText(tempUser.getEmail());
 
-        //viewHolder.userProfileImage.setImageURI(Uri.parse(tempUser.getProfileImageURL()));
-
 
         if(tempUser.getLastLocation() == null){
-            viewHolder.tvLongitude.setText("Nem Ismert");
-            viewHolder.tvLangitude.setText("Nem ismert");
-            viewHolder.tvAddress.setText("Nem ismert");
-        }else{
-
-
+            viewHolder.tvLongitude.setText(R.string.unknown);
+            viewHolder.tvLatitude.setText(R.string.unknown);
+            viewHolder.tvAddress.setText(R.string.unknown);
+        } else {
             viewHolder.tvLongitude.setText(String.valueOf(tempUser.getLastLocation().getLongitude()));
-            viewHolder.tvLangitude.setText(String.valueOf(tempUser.getLastLocation().getLatitude()));
-
-
+            viewHolder.tvLatitude.setText(String.valueOf(tempUser.getLastLocation().getLatitude()));
             viewHolder.tvAddress.setText(getAddressFromMyLocation(tempUser));
-
         }
-
 
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
                 if(context!= null) {
-                    selectedUserName = tempUser.getUsername();
-                    Intent showUserdetails = new Intent(context,UserMapsActivity.class);
-                    showUserdetails.putExtra(Constants.LONGITUDE, tempUser.getLastLocation().getLongitude());
-                    showUserdetails.putExtra(Constants.LATITUDE, tempUser.getLastLocation().getLatitude());
-                    showUserdetails.putExtra(Constants.USERNAME, tempUser.getUsername());
-                    showUserdetails.putExtra(Constants.CURRENTUSER_UID, tempUser.getuId());
+                    Intent showUserdata = new Intent(context,UserMapsActivity.class);
+                    showUserdata.putExtra(Constants.LONGITUDE, tempUser.getLastLocation().getLongitude());
+                    showUserdata.putExtra(Constants.LATITUDE, tempUser.getLastLocation().getLatitude());
+                    showUserdata.putExtra(Constants.USERNAME, tempUser.getUsername());
+                    showUserdata.putExtra(Constants.CURRENTUSER_UID, tempUser.getuId());
 
-                    context.startActivity(showUserdetails);
+                    context.startActivity(showUserdata);
                 }
             }
         });
-        //SET PROFILE IMAGE
 
+        //SET PROFILE IMAGE
       if (!TextUtils.isEmpty(tempUser.getProfileImageURL())) {
             Glide.with(context).load(tempUser.getProfileImageURL()).into(viewHolder.userProfileImage);
             viewHolder.userProfileImage.setVisibility(View.VISIBLE);
@@ -135,31 +122,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             viewHolder.userProfileImage.setVisibility(View.GONE);
         }
 
-        setAnimation(viewHolder.itemView, position);
+        //setAnimation(viewHolder.itemView, position);
 
-    }
-
-    private String getAddressFromMyLocation(User tempUser) {
-        String strAdd = "";
-        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
-        try {
-            List<Address> addresses = geocoder.getFromLocation(tempUser.getLastLocation().getLatitude(), tempUser.getLastLocation().getLongitude(), 1);
-            if (addresses != null && !addresses.isEmpty()) {
-                Address returnedAddress = addresses.get(0);
-                StringBuilder sb = new StringBuilder("");
-                for (int i = 0; i <= returnedAddress.getMaxAddressLineIndex(); i++) {
-                    sb.append(returnedAddress.getAddressLine(i)).append("\n");
-                }
-                strAdd = sb.toString();
-                //Log.w("Current loction address", sb.toString());
-            } else {
-                //Log.w("Current loction address", "No Address returned!");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            //Log.e("UserAdapter", String.valueOf(e.getStackTrace()));
-        }
-        return strAdd;
     }
 
     @Override
@@ -173,13 +137,11 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
-
-
     public void updateLastLocation(MyLocation myLocation) {
 
 
-        Log.d("myLocation: ", String.valueOf(myLocation));
-        Log.d("UserMAP: ", userMap.toString());
+        Log.d(TAG, "myLocation: " +  String.valueOf(myLocation));
+        Log.d(TAG,"UserMAP: " + userMap.toString());
 
 
        if(myLocation != null && userMap.containsKey(myLocation.getUserId())){
@@ -198,22 +160,40 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     }
 
 
-    public User getuserbyId(String uId){
+    public User getUserbyId(String uId){
         return userMap.get(uId);
     }
 
-    public void setUsersProfileImages(Map<String, String> imageURLByUserId){
-        for(String uId : imageURLByUserId.keySet()){
-            if(userMap.containsKey(uId))
-            userMap.get(uId).setProfileImageURL(imageURLByUserId.get(uId));
-        }
-        notifyDataSetChanged();
-    }
+
     public void updateProfileImage(String uId, String profileImgURL){
         if(userMap.containsKey(uId)){
             userMap.get(uId).setProfileImageURL(profileImgURL);
         }
         notifyDataSetChanged();
+    }
+
+    private String getAddressFromMyLocation(User tempUser) {
+        String strAdd = "";
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(tempUser.getLastLocation().getLatitude(), tempUser.getLastLocation().getLongitude(), 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address returnedAddress = addresses.get(0);
+                StringBuilder sb = new StringBuilder("");
+                for (int i = 0; i <= returnedAddress.getMaxAddressLineIndex(); i++) {
+                    sb.append(returnedAddress.getAddressLine(i)).append("\n");
+                }
+                strAdd = sb.toString();
+
+            } else {
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, String.valueOf(e.getStackTrace()));
+        }
+
+        return strAdd;
     }
 
 

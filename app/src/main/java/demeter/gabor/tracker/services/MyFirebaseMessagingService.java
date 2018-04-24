@@ -15,7 +15,6 @@ import com.google.firebase.messaging.RemoteMessage;
 import java.util.HashMap;
 import java.util.Map;
 
-import demeter.gabor.tracker.MainActivity;
 import demeter.gabor.tracker.R;
 import demeter.gabor.tracker.UserMapsActivity;
 import demeter.gabor.tracker.Util.Constants;
@@ -71,9 +70,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
 
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this,getString(R.string.default_notification_channel_id))
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setChannelId(getString(R.string.default_notification_channel_id))
                 .setContentTitle(title)
                 .setContentText(messageBody)
                 .setAutoCancel(true)

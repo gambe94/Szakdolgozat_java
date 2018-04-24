@@ -13,7 +13,6 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -27,14 +26,14 @@ public class BaseActivity extends AppCompatActivity {
 
 
     protected StorageReference mStorageRef;
-    protected  StorageReference mImagesRefecence;
+    protected StorageReference mImagesRefecence;
 
 
     protected DatabaseReference mDatabase;
-    protected DatabaseReference  mImages;
+    protected DatabaseReference mImages;
 
 
-    public void showProgressDialog(String message) {
+    protected void showProgressDialog(String message) {
         if (mProgressDialog == null) {
             mProgressDialog = new ProgressDialog(this);
             mProgressDialog.setCancelable(false);
@@ -47,24 +46,24 @@ public class BaseActivity extends AppCompatActivity {
     public void showProgressDialogPercentage(double percentage) {
         if (mProgressDialog == null) {
             mProgressDialog.setCancelable(false);
-            mProgressDialog.setMessage("Uploaded" +(int)percentage+"%");
+            mProgressDialog.setMessage("Uploaded" + (int) percentage + "%");
         }
 
         mProgressDialog.show();
     }
 
-    public void hideProgressDialog() {
+    protected void hideProgressDialog() {
         if (mProgressDialog != null && mProgressDialog.isShowing()) {
             mProgressDialog.dismiss();
         }
     }
 
-    public String getUid() {
+    protected String getUid() {
         return FirebaseAuth.getInstance().getCurrentUser().getUid();
     }
 
 
-    protected    void selectImageFromGallery() {
+    protected void selectImageFromGallery() {
         Intent intent = new Intent();
         intent.setType("image/*");
         intent.setAction(Intent.ACTION_GET_CONTENT);
@@ -72,9 +71,6 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     protected void uploadImagetoFireBase(Bitmap bitmapToUpload) {
-        Log.d(TAG, "uploadImagetoFireBase: ");
-
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] data = baos.toByteArray();
@@ -84,7 +80,7 @@ public class BaseActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Exception exception) {
                 // Handle unsuccessful uploads
-                Log.d("FireBase Upload", exception.getMessage());
+                Log.e(TAG, exception.getMessage());
             }
         }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
@@ -92,14 +88,12 @@ public class BaseActivity extends AppCompatActivity {
                 // taskSnapshot.getMetadata() contains file metadata such as size, content-type, and download URL.
                 Uri downloadUrl = taskSnapshot.getDownloadUrl();
                 Toast.makeText(getApplicationContext(), "Image Uploaded Successfully ", Toast.LENGTH_LONG).show();
-                Log.d("FireBase Upload",downloadUrl.toString());
 
                 mImages.child(getUid()).setValue(downloadUrl.toString());
             }
         });
 
     }
-
 
 
 }

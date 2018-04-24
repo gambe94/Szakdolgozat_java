@@ -1,8 +1,5 @@
 package demeter.gabor.tracker;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -24,7 +21,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.Stack;
 
@@ -36,7 +32,7 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
     private static final String TAG = UserMapsActivity.class.getName();
     private GoogleMap mMap;
 
-    private DatabaseReference mUsersDatabase;
+
     private DatabaseReference mLocationReference;
     private DatabaseReference mLastKnownLocation;
 
@@ -51,9 +47,6 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
     private int position = 0;
     private Stack<MarkerOptions> markers;
 
-    //  private BroadcastReceiver broadcastReceiver;
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,15 +60,11 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
 
 
         //DATABASES REFERENCE
-        mUsersDatabase = FirebaseDatabase.getInstance().getReference(Constants.USERS_REF);
+
         mLocationReference = FirebaseDatabase.getInstance().getReference(Constants.LOCATIONS_REF);
         mLastKnownLocation = FirebaseDatabase.getInstance().getReference(Constants.LAST_KNOWN_LOCATIONS_REF);
 
         mLastLocationQuery = mLocationReference.orderByKey().limitToLast(1);
-
-
-
-
 
 
         markers = new Stack<>();
@@ -103,15 +92,15 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
             public void onDataChange(DataSnapshot dataSnapshot) {
 
 
-                for(DataSnapshot data : dataSnapshot.getChildren()){
-                    Log.d(TAG, "Location Query"+ dataSnapshot.toString());
+                for (DataSnapshot data : dataSnapshot.getChildren()) {
+                    Log.d(TAG, "Location Query" + dataSnapshot.toString());
                     MyLocation loc = data.getValue(MyLocation.class);
 
-                    Log.d(TAG, "Location loc"+ String.valueOf(loc));
-                    Log.d(TAG, "uid "+ String.valueOf(uId));
-                    if(loc != null && uId.equals(loc.getUserId()) && mMap != null){
+                    Log.d(TAG, "Location loc" + String.valueOf(loc));
+                    Log.d(TAG, "uid " + String.valueOf(uId));
+                    if (loc != null && uId.equals(loc.getUserId()) && mMap != null) {
                         mMap.clear();
-                        animateMarker(position++,new LatLng(currentLatitude,currentLongitude), new LatLng(loc.getLatitude(),loc.getLongitude()), false);
+                        animateMarker(position++, new LatLng(currentLatitude, currentLongitude), new LatLng(loc.getLatitude(), loc.getLongitude()), false);
                         currentLongitude = loc.getLongitude();
                         currentLatitude = loc.getLatitude();
 
@@ -152,11 +141,9 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
     }
 
 
-
     //This methos is used to move the marker of each car smoothly when there are any updates of their position
-    public void animateMarker(final int position, final LatLng startPosition, final LatLng toPosition,
-                              final boolean hideMarker) {
-
+    private void animateMarker(final int position, final LatLng startPosition, final LatLng toPosition,
+                               final boolean hideMarker) {
 
 
         MarkerOptions myMarker = new MarkerOptions()
@@ -164,13 +151,12 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
                 .title(username);
 
 
-        if(!markers.isEmpty()){
+        if (!markers.isEmpty()) {
             markers.pop().visible(false);
         }
         markers.push(myMarker);
         mMap.clear();
         final Marker marker = mMap.addMarker(myMarker);
-
 
 
         final Handler handler = new Handler();
@@ -212,7 +198,7 @@ public class UserMapsActivity extends FragmentActivity implements OnMapReadyCall
         super.onPause();
         Log.d(TAG, "eletciklus ONPAUSE");
         mLastLocationQuery.removeEventListener(locationLisener);
-        mLastKnownLocation.child(uId).setValue(new MyLocation(this.currentLatitude,this.currentLongitude,uId));
+        mLastKnownLocation.child(uId).setValue(new MyLocation(this.currentLatitude, this.currentLongitude, uId));
     }
 
     @Override
