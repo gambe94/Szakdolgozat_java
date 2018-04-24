@@ -48,7 +48,7 @@ public class SignInActivity extends BaseActivity implements View.OnClickListener
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sign_in);
+        setContentView(R.layout.activity_login);
 
         //INIT FITEBASE REFERENCE
         mDatabase = FirebaseDatabase.getInstance().getReference(); //filed declared in baseActivity
